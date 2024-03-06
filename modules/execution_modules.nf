@@ -2018,9 +2018,6 @@ process BAM2CRAM {
 		${scratch_mkdir}
 		samtools view -C -T ${ref} -o ${bam.baseName}.cram ${bam} 
 		samtools index ${bam.baseName}.cram ${bam.baseName}.cram.crai
-		if [ -d ${params.output}/bams/ ]; then
-			rm -r ${params.output}/bams/
-		fi
 		
 		"""
 }
