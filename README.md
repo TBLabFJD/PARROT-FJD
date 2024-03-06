@@ -19,10 +19,7 @@ Mapping and variant calling processes can be parallelized to speed up the analys
 `--parallel_mapping true`: FASTP will be executed to split FASTQ files in three chunks that will be mapped in parallel.   
 `--parallel_calling true`: BAM file will be split by chromosomes in smaller BAM files that will be processed in parallel. 
 
-Mapping and variant calling processes can be parallelized to speed up the analysis. These option can be activated using the parameters `--parallel_mapping true` and `--parallel_calling true`.
-
-`--parallel_mapping true`: FASTP will be executed to split FASTQ files in three chunks that will be mapped in parallel.   
-`--parallel_calling true`: BAM file will be split by chromosomes in smaller BAM files that will be processed in parallel. 
+For using this options, using `--cpus-per-task=44` is recommended. 
 
 You can generate and keep a cram file out of your bam, when running either MS or just S. The cram is generated inside the out folder: /out/cram/. By default: --keep_cram false
 `--keep_cram true`: generate and keep cram file
@@ -30,7 +27,6 @@ You can generate and keep a cram file out of your bam, when running either MS or
 You can generate the mosdepth bed file from your bam, when running either MS or just S. The bed is generated inside the out folder: /out/qc/mosdepth_cov/. By default: --mosdepth_bed false
 `--mosdepth_bed true`: generate the mosdepth.bed file needed to update the db of allele frequencies. 
 
-For using this options, using `--cpus-per-task=44` is recommended. 
 
 There are different profiles available depending on the reference release to use, where to run it, and type of contenerization:
 
