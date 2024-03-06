@@ -1,15 +1,25 @@
 # PARROT-FJD
-Pipeline of Analysis and Research of Rare diseases Optimized in Tblab - Fundación Jiménez Díaz. This is a germline variant calling pipeline implemented in Nextflow which performs mapping, SNV/INDEL calling and annotation, and CNV calling and annotation for targeted sequencing (gene panels and WES) and whole genome sequencing. These differen
-
+Pipeline of Analysis and Research of Rare diseases Optimized in Tblab - Fundación Jiménez Díaz. This is a germline variant calling pipeline implemented in Nextflow which performs mapping, SNV/INDEL calling and annotation, and CNV calling and annotation for targeted sequencing (gene panels and WES) and whole genome sequencing. 
 
 ## How to run this pipeline
 The different tasks previously mention are divided into different workflows which are specified usig the `--analysis` flag followed by the corresponding letters:
  - D (Download): It downloads the FASTQ files from BaseSpace. If CNV calling or no samples are specified all samples from a project will be downloaded. 
  - M (Mapping): Specified FASTQ files from a directory (or the ones downloaded) are mapped into analysis-ready BAM files.
- - S (SNV/INDEL calling): Specified BAM files (or the ones just mapped) are used for SNV and INDEL calling using GATK, Dragen and DeepVariant workflows and merged into a single-sample VCF (single VCFs from each variant caller are also available)
+ - S (SNV/INDEL calling): Specified BAM files (or the ones just mapped) are used for SNV and INDEL calling using GATK by default. Dragen and DeepVariant are also available. The variant caller can be selected with the parameter `--vc_tools`. The options are: 
+     - `gatk`: Haplotypecaller
+     - `dragen`
+     - `deepvariant`
+     - `all` (equivalent to: gatk,dragen,deepvariant). Using this option, resulting vcfs will be merged into a single-sample VCF (single VCFs from each variant caller are also available)
+   More than one tool can be chosen using "," (`--vc_tools gatk,dragen`)
  - A (Annotation of SNVs and INDELS). Specified VCF files from a directory (or the ones just generated in the SNV/INDEL calling step) are annotated and transformed into a TSV file.
  - C (CNV calling and annotation). Specified BAM files (or the ones just mapped) are used for CNV calling using Exomedepth, Convading, Panelcn.mops and GATK, and annotation using AnnotSV. In the case of analycing WGS (`--capture G`) the variant calling used is Manta.
 
+Mapping and variant calling processes can be parallelized to speed up the analysis. These option can be activated using the parameters `--parallel_mapping true` and `--parallel_calling true`.
+
+`--parallel_mapping true`: FASTP will be executed to split FASTQ files in three chunks that will be mapped in parallel.   
+`--parallel_calling true`: BAM file will be split by chromosomes in smaller BAM files that will be processed in parallel. 
+
+For using this options, using `--cpus-per-task=44` is recommended. 
 
 There are different profiles available depending on the reference release to use, where to run it, and type of contenerization:
 
