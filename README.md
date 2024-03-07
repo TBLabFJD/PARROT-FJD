@@ -2,7 +2,8 @@
 Pipeline of Analysis and Research of Rare diseases Optimized in Tblab - Fundación Jiménez Díaz. This is a germline variant calling pipeline implemented in Nextflow which performs mapping, SNV/INDEL calling and annotation, and CNV calling and annotation for targeted sequencing (gene panels and WES) and whole genome sequencing. 
 
 <p align="center">
-  <img width="1080" height="1620" src="https://github.com/TBLabFJD/PARROT-FJD/assets/48798983/3d7a487a-1e77-49e3-b495-3faa73ede70f">
+  <img width="700" height="1300" src="https://github.com/TBLabFJD/PARROT-FJD/assets/48798983/309dfb16-ef3f-4885-bdb1-02a77b89f414")
+">
 </p>
 
 
