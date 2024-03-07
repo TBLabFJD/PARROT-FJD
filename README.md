@@ -1,7 +1,7 @@
 # PARROT-FJD
 Pipeline of Analysis and Research of Rare diseases Optimized in Tblab - Fundación Jiménez Díaz. This is a germline variant calling pipeline implemented in Nextflow which performs mapping, SNV/INDEL calling and annotation, and CNV calling and annotation for targeted sequencing (gene panels and WES) and whole genome sequencing. 
 <p align="center">
-  <img width="500" height="800" src="https://github.com/TBLabFJD/PARROT-FJD/assets/48798983/309dfb16-ef3f-4885-bdb1-02a77b89f414")
+  <img width="500" height="800" src="https://github.com/TBLabFJD/PARROT-FJD/assets/48798983/3fc59e2f-ce9d-4812-9279-37fa4801c404")
 ">
 </p>
 
