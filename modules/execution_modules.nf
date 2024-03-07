@@ -731,6 +731,7 @@ process APPLYBQSR {
 
 process MERGEBAM{
         label "bioinfotools"
+	publishDir "${params.output}/bams", mode: 'copy'
 
         input:
                 tuple val(sample), path(bam)
