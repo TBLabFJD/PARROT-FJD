@@ -4,6 +4,7 @@ Pipeline of Analysis and Research of Rare diseases Optimized in Tblab - Fundaci√
   <img width="500" height="800" src="https://github.com/TBLabFJD/PARROT-FJD/assets/48798983/309dfb16-ef3f-4885-bdb1-02a77b89f414")
 ">
 </p>
+
 ## How to run this pipeline
 The different tasks previously mention are divided into different workflows which are specified usig the `--analysis` flag followed by the corresponding letters:
  - D (Download): It downloads the FASTQ files from BaseSpace. If CNV calling or no samples are specified all samples from a project will be downloaded. 
