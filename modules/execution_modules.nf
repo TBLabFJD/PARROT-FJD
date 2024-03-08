@@ -345,7 +345,8 @@ process FASTQ_CONCATENATION {
 
 process FASTP {
     label 'fastp'
-    label 'process_high'
+    label "highcpu"
+    label "highmem"
 
     input:
     tuple val(sample), path(forward), path(reverse)
@@ -1162,6 +1163,8 @@ params.chroms = 'chr{{1..22},X,Y}'
 
 process SPLIT_BAM {
 	label "bioinfotools"
+	label "highcpu"
+	label "highmem"
 	tag { sample }
 	//publishDir "${params.output}/split_bams", mode: 'copy'
 
