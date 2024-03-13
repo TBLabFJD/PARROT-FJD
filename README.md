@@ -31,6 +31,8 @@ You can generate and keep a cram file out of your bam, when running either MS or
 You can generate the mosdepth bed file from your bam, when running either MS or just S. The bed is generated inside the out folder: /out/qc/mosdepth_cov/. By default: --mosdepth_bed false
 `--mosdepth_bed true`: generate the mosdepth.bed file needed to update the db of allele frequencies. 
 
+You need to define with what technique your data was generated: WES, WGS or CES. By default is WES
+	`--technique WES` : My data is/are WES samples
 
 There are different profiles available depending on the reference release to use, where to run it, and type of contenerization:
 
