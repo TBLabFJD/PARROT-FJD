@@ -2010,10 +2010,10 @@ process BAM2CRAM {
 	output:
 		tuple \
 			val(sample), \
-			path("${bam.baseName}.cram.crai"), emit: cram_idx
+			path("${bam.baseName}.${params.technique}.v41.cram ${bam.baseName}.${params.technique}.v41.Date().cram.crai"), emit: cram_idx
 		tuple \
 			val(sample), \
-			path("${bam.baseName}.cram"), emit: cram
+			path("${sample}.${assembly}.${program}.${params.technique}.Date().v41.final.vcf.gz"), emit: cram
 
 	script:
 		def scratch_field   = scratch ? "--tmp-dir ${scratch}/${sample}_bam2cram" : ""	
@@ -2021,9 +2021,10 @@ process BAM2CRAM {
 
 		"""
 		${scratch_mkdir}
-		samtools view -C -T ${ref} -o ${bam.baseName}.${params.technique}.v41.${date +"%Y%m%d"}.cram ${bam} 
-		samtools index ${bam.baseName}.${params.technique}.v41.${date +"%Y%m%d"}.cram ${bam.baseName}.${params.technique}.v41.${date +"%Y%m%d"}.cram.crai
-		
+		samtools view -C -T ${ref} -o ${bam.baseName}.${params.technique}.v41.cram ${bam} 
+		samtools index ${bam.baseName}.${params.technique}.v41.cram ${bam.baseName}.${params.technique}.v41.cram.crai
+		cp ${bam.baseName}.${params.technique}.v41.cram ${bam.baseName}.${params.technique}.v41.cram.crai ${bam.baseName}.${params.technique}.v41.cram ${bam.baseName}.${params.technique}.v41.Date().cram.crai
+		cp ${bam.baseName}.${params.technique}.v41.cram ${bam.baseName}.${params.technique}.v41.Date().cram 
 		"""
 }
 
