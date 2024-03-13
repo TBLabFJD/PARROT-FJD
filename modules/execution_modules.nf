@@ -1977,18 +1977,19 @@ process FINAL_VCF {
 	output:
 		tuple \
 			val(sample), \
-			path("${sample}.${assembly}.${program}.${params.technique}.v41.${date +"%Y%m%d"}.final.vcf.gz"), emit: vcf
+			path("${sample}.${assembly}.${program}.${params.technique}.Date().v41.final.vcf.gz"), emit: vcf
 
 		tuple \
 			val(sample), \
-			path("${sample}.${assembly}.${program}.${params.technique}.v41.${date +"%Y%m%d"}.final.vcf.gz.tbi"), emit: index
+			path("${sample}.${assembly}.${program}.${params.technique}.v41.Date().final.vcf.gz.tbi"), emit: index
 
 	script:
 
 		"""
 		#convertir el vcf individual en el final y crearle su index (basicamente renombrarlo)
-	    cp ${sample}.${assembly}.${program}.vcf.gz ${sample}.${assembly}.${program}.${params.technique}.v41.${date +"%Y%m%d"}.final.vcf.gz
-		tabix -p vcf ${sample}.${assembly}.${program}.${params.technique}.v41.${date +"%Y%m%d"}.final.vcf.gz
+	    cp ${sample}.${assembly}.${program}.vcf.gz ${sample}.${assembly}.${program}.${params.technique}.Date().v41.final.vcf.gz
+		tabix -p vcf ${sample}.${assembly}.${program}.${params.technique}.v41.Date().final.vcf.gz
+	
 		"""
 }
 
