@@ -1977,18 +1977,18 @@ process FINAL_VCF {
 	output:
 		tuple \
 			val(sample), \
-			path("${sample}.${assembly}.${program}.${params.technique}.v41.$(date +"%Y%m%d").final.vcf.gz"), emit: vcf
+			path("${sample}.${assembly}.${program}.${params.technique}.v41.${date +"%Y%m%d"}.final.vcf.gz"), emit: vcf
 
 		tuple \
 			val(sample), \
-			path("${sample}.${assembly}.${program}.${params.technique}.v41.$(date +"%Y%m%d").final.vcf.gz.tbi"), emit: index
+			path("${sample}.${assembly}.${program}.${params.technique}.v41.${date +"%Y%m%d"}.final.vcf.gz.tbi"), emit: index
 
 	script:
 
 		"""
 		#convertir el vcf individual en el final y crearle su index (basicamente renombrarlo)
-	    cp ${sample}.${assembly}.${program}.vcf.gz ${sample}.${assembly}.${program}.${params.technique}.v41.$(date +"%Y%m%d").final.vcf.gz
-		tabix -p vcf ${sample}.${assembly}.${program}.${params.technique}.v41.$(date +"%Y%m%d").final.vcf.gz
+	    cp ${sample}.${assembly}.${program}.vcf.gz ${sample}.${assembly}.${program}.${params.technique}.v41.${date +"%Y%m%d"}.final.vcf.gz
+		tabix -p vcf ${sample}.${assembly}.${program}.${params.technique}.v41.${date +"%Y%m%d"}.final.vcf.gz
 		"""
 }
 
@@ -2020,8 +2020,8 @@ process BAM2CRAM {
 
 		"""
 		${scratch_mkdir}
-		samtools view -C -T ${ref} -o ${bam.baseName}.${params.technique}.v41.$(date +"%Y%m%d").cram ${bam} 
-		samtools index ${bam.baseName}.${params.technique}.v41.$(date +"%Y%m%d").cram ${bam.baseName}.${params.technique}.v41.$(date +"%Y%m%d").cram.crai
+		samtools view -C -T ${ref} -o ${bam.baseName}.${params.technique}.v41.${date +"%Y%m%d"}.cram ${bam} 
+		samtools index ${bam.baseName}.${params.technique}.v41.${date +"%Y%m%d"}.cram ${bam.baseName}.${params.technique}.v41.${date +"%Y%m%d"}.cram.crai
 		
 		"""
 }
