@@ -927,7 +927,7 @@ process MOSDEPTH_COV {
 		else*/
 			"""
 			mosdepth --quantize 10: -n -x ${sample}_cov ${bam}
-			zcat ${sample}_cov.quantized.bed.gz > ${sample}.global.quantized.bed
+			zcat ${sample}_cov.quantized.bed.gz > ${sample}.${params.technique}.v41.${params.current_date}.global.quantized.bed
 			"""
 }
 
@@ -1977,18 +1977,19 @@ process FINAL_VCF {
 	output:
 		tuple \
 			val(sample), \
-			path("${sample}.${assembly}.${program}.final.vcf.gz"), emit: vcf
+			path("${sample}.${assembly}.${program}.${params.technique}.v41.${params.current_date}.final.vcf.gz"), emit: vcf
 
 		tuple \
 			val(sample), \
-			path("${sample}.${assembly}.${program}.final.vcf.gz.tbi"), emit: index
+			path("${sample}.${assembly}.${program}.${params.technique}.v41.${params.current_date}.final.vcf.gz.tbi"), emit: index
 
 	script:
 
 		"""
 		#convertir el vcf individual en el final y crearle su index (basicamente renombrarlo)
-	    cp ${sample}.${assembly}.${program}.vcf.gz ${sample}.${assembly}.${program}.final.vcf.gz
-		tabix -p vcf ${sample}.${assembly}.${program}.final.vcf.gz
+	    	cp ${sample}.${assembly}.${program}.vcf.gz ${sample}.${assembly}.${program}.${params.technique}.v41.${params.current_date}.final.vcf.gz
+		tabix -p vcf ${sample}.${assembly}.${program}.${params.technique}.v41.${params.current_date}.final.vcf.gz
+	
 		"""
 }
 
@@ -2009,10 +2010,10 @@ process BAM2CRAM {
 	output:
 		tuple \
 			val(sample), \
-			path("${bam.baseName}.cram.crai"), emit: cram_idx
+			path("${bam.baseName}.${params.technique}.v41.${params.current_date}.cram.crai"), emit: cram_idx
 		tuple \
 			val(sample), \
-			path("${bam.baseName}.cram"), emit: cram
+			path("${bam.baseName}.${params.technique}.v41.${params.current_date}.cram"), emit: cram
 
 	script:
 		def scratch_field   = scratch ? "--tmp-dir ${scratch}/${sample}_bam2cram" : ""	
@@ -2020,9 +2021,8 @@ process BAM2CRAM {
 
 		"""
 		${scratch_mkdir}
-		samtools view -C -T ${ref} -o ${bam.baseName}.cram ${bam} 
-		samtools index ${bam.baseName}.cram ${bam.baseName}.cram.crai
-		
+		samtools view -C -T ${ref} -o ${bam.baseName}.${params.technique}.v41.${params.current_date}.cram ${bam} 
+		samtools index ${bam.baseName}.${params.technique}.v41.${params.current_date}.cram ${bam.baseName}.${params.technique}.v41.${params.current_date}.cram.crai
 		"""
 }
 
