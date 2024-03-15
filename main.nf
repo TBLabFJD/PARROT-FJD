@@ -1828,8 +1828,12 @@ if ( params.keep_cram == true ) {
 	}
 
 
-
-
+	if ( params.do_cleanup == true ) {
+	
+		cleanupScratch (
+			params.scratch ) //proceso
+		
+	}
 
 }
 
