@@ -1831,9 +1831,7 @@ if ( params.keep_cram == true ) {
 
 	if ( params.do_cleanup == true ) {
 	
-		CLEANUP_SCRATCH (
-			params.scratch
-		) //proceso
+		CLEANUP_SCRATCH () //proceso
 		
 	}
 
