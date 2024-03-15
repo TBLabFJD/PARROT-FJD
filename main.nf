@@ -74,6 +74,7 @@ include { FINAL_VCF as FINAL_DEEPVARIANT } from './modules/execution_modules'
 /// GUR
 include { BAM2CRAM } from './modules/execution_modules' 
 include { CRAM2BAM } from './modules/execution_modules' 
+include { CLEANUP_SCRATCH } from './modules/execution_modules' 
 
 
 ///
@@ -1830,7 +1831,7 @@ if ( params.keep_cram == true ) {
 
 	if ( params.do_cleanup == true ) {
 	
-		cleanupScratch (
+		CLEANUP_SCRATCH (
 			params.scratch ) //proceso
 		
 	}
