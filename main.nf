@@ -1829,11 +1829,13 @@ if ( params.keep_cram == true ) {
 	}
 
 
-	if ( params.do_cleanup == true ) {
+    onComplete {
+        if ( params.do_cleanup == true ) {
 	
 		CLEANUP_SCRATCH () //proceso
 		
 	}
+    }
 
 }
 
