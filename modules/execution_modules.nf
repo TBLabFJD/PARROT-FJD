@@ -3698,6 +3698,5 @@ process CLEANUP_SCRATCH {
 	    # Remove the SINGULARITY_TMPDIR folder in UAM (scratch) or tmp in tblab
 	    rm -rf ${scratch}
     """
-    ignoreExitStatus true
 }
 
