@@ -3691,12 +3691,10 @@ process VCF2BED {
 
 
 process CLEANUP_SCRATCH {
-    input:
-		path scratch
     script:
     """
 	    # Remove the SINGULARITY_TMPDIR folder in UAM (scratch) or tmp in tblab
-	    rm -rf ${scratch}
+	    rm -rf ${params.scratch}
     """
 }
 
