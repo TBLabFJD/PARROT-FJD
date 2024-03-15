@@ -3690,7 +3690,7 @@ process VCF2BED {
 }
 
 
-process cleanupScratch {
+process CLEANUP_SCRATCH {
     input:
 		path scratch
     script:
