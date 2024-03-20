@@ -386,7 +386,7 @@ process BWA {
 	label "bwa"
 	label "highcpu"
 	label "highmem"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(forward), path(reverse)
@@ -421,7 +421,7 @@ process BWA {
 
 process FASTQTOSAM {
 	label "gatk"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(forward), path(reverse)
@@ -455,7 +455,7 @@ process FASTQTOSAM {
 
 process MERGEBAMALIGNMENT {
 	label "gatk"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(mapped_bam), path(unmapped_bam)
@@ -512,7 +512,7 @@ process MARKDUPLICATESSPARK {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 	publishDir "${params.output}/mapping_stats", mode: 'copy', pattern: "marked_dup_metrics*"
 	
 
@@ -563,7 +563,7 @@ process MARKDUPLICATESSPARK {
 
 process SORTSAM {
 	label "gatk"	
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(merged_bam)
@@ -600,7 +600,7 @@ process SORTSAM {
 
 process SETTAGS {	
 	label "gatk"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(sorted_bam), path(sorted_bai)
@@ -644,7 +644,7 @@ process SETTAGS {
 process BASERECALIBRATOR {	
 	label "gatk"
 	publishDir "${params.output}/mapping_stats", mode: 'copy'
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(deduppedsorted), path(deduppedsorted_bai)
@@ -693,7 +693,7 @@ process BASERECALIBRATOR {
 process APPLYBQSR {	
 	label "gatk"
 	publishDir "${params.output}/bams", mode: 'copy'
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(deduppedsorted), path(deduppedsorted_bai), path(bqsr_table)
@@ -897,7 +897,7 @@ process MOSDEPTH_PLOT {
 process MOSDEPTH_COV {
 	label "bioinfotools"
 	publishDir "${params.output}/qc/mosdepth_cov", mode: 'copy'
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(bam), path(bai)
@@ -1198,7 +1198,8 @@ process PARALLEL_HAPLOTYPECALLER {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 	//publishDir "${params.output}/", mode: 'copy'
 	//publishDir "${params.output}/out_parallel_vcfs/", mode: 'copy'
 	tag { bam }
@@ -1251,7 +1252,7 @@ process HAPLOTYPECALLER {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 	// publishDir "${params.output}/", mode: 'copy'
 
 	input:
@@ -1294,7 +1295,7 @@ process MERGE_SPLIT_VCF {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 	//publishDir "${params.output}/parallel_vcfs", mode: 'copy'
 	input:
 		//path my_vcfs
@@ -1334,7 +1335,7 @@ process SELECT_SNV {
 	label "gatk"	
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1373,7 +1374,7 @@ process SELECT_INDEL {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1411,7 +1412,7 @@ process SELECT_MIX {
 	label "gatk"	
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1452,7 +1453,7 @@ process FILTRATION_SNV {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1500,7 +1501,7 @@ process FILTRATION_INDEL {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1546,7 +1547,7 @@ process FILTRATION_MIX {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1588,7 +1589,7 @@ process MERGE_VCF {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'ignore'	
+	errorStrategy 'retry'	
 	//publishDir "${params.output}/snvs", mode: 'copy'
 
 	input:
@@ -1661,7 +1662,7 @@ process DEEPVARIANT {
 	label "deepvariant"	
 	label "highcpu"	
 	label "highmem"	
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 	// publishDir "${params.output}/", mode: 'copy'
 
 	input:
@@ -1934,7 +1935,7 @@ process FILTRATION_DRAGEN {
 
 process FILTER_VCF {	
 	label "bioinfotools"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	publishDir "${params.output}/individual_callers_snvs", mode: 'copy'
 	input:
@@ -1965,7 +1966,7 @@ process FILTER_VCF {
 //// GUR: PROCESO NUEVO PARA OBTENER EL VCF FINAL EN LA CARPETA SNVS (EL FINAL VCF)
 process FINAL_VCF {	
 	label "bioinfotools"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 
 	publishDir "${params.output}/snvs", mode: 'copy'
 	input:
@@ -1996,7 +1997,7 @@ process FINAL_VCF {
 /////////// PROCESO CONVERSION BAM/CRAM
 process BAM2CRAM {	
 	label "bioinfotools"
-	errorStrategy 'ignore'
+	errorStrategy 'retry'
 	publishDir "${params.output}/cram", mode: 'copy'
 
 	input:
