@@ -1173,7 +1173,7 @@ process RUN_QC_CAT {
 params.chroms = 'chr{{1..22},X,Y}'
 
 process SPLIT_BAM {
-	label "bioinfotools"
+	label "samtoolsgur"
 	label "highcpu"
 	label "highmem"
 	tag { sample }
