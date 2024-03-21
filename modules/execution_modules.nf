@@ -386,7 +386,8 @@ process BWA {
 	label "bwa"
 	label "highcpu"
 	label "highmem"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(forward), path(reverse)
@@ -421,7 +422,8 @@ process BWA {
 
 process FASTQTOSAM {
 	label "gatk"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(forward), path(reverse)
@@ -455,7 +457,8 @@ process FASTQTOSAM {
 
 process MERGEBAMALIGNMENT {
 	label "gatk"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(mapped_bam), path(unmapped_bam)
@@ -512,7 +515,8 @@ process MARKDUPLICATESSPARK {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 	publishDir "${params.output}/mapping_stats", mode: 'copy', pattern: "marked_dup_metrics*"
 	
 
@@ -563,7 +567,8 @@ process MARKDUPLICATESSPARK {
 
 process SORTSAM {
 	label "gatk"	
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(merged_bam)
@@ -600,7 +605,8 @@ process SORTSAM {
 
 process SETTAGS {	
 	label "gatk"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(sorted_bam), path(sorted_bai)
@@ -644,7 +650,8 @@ process SETTAGS {
 process BASERECALIBRATOR {	
 	label "gatk"
 	publishDir "${params.output}/mapping_stats", mode: 'copy'
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(deduppedsorted), path(deduppedsorted_bai)
@@ -693,7 +700,8 @@ process BASERECALIBRATOR {
 process APPLYBQSR {	
 	label "gatk"
 	publishDir "${params.output}/bams", mode: 'copy'
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(deduppedsorted), path(deduppedsorted_bai), path(bqsr_table)
@@ -733,6 +741,8 @@ process APPLYBQSR {
 process MERGEBAM{
         label "bioinfotools"
 	publishDir "${params.output}/bams", mode: 'copy'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
         input:
                 tuple val(sample), path(bam)
@@ -897,7 +907,8 @@ process MOSDEPTH_PLOT {
 process MOSDEPTH_COV {
 	label "bioinfotools"
 	publishDir "${params.output}/qc/mosdepth_cov", mode: 'copy'
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(bam), path(bai)
@@ -1167,7 +1178,8 @@ process SPLIT_BAM {
 	label "highmem"
 	tag { sample }
 	//publishDir "${params.output}/split_bams", mode: 'copy'
-
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
     input:
     tuple val(sample), path(bam), path(bai)
 
@@ -1252,7 +1264,8 @@ process HAPLOTYPECALLER {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 	// publishDir "${params.output}/", mode: 'copy'
 
 	input:
@@ -1295,7 +1308,9 @@ process MERGE_SPLIT_VCF {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'retry'
+	tag { sample }
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 	//publishDir "${params.output}/parallel_vcfs", mode: 'copy'
 	input:
 		//path my_vcfs
@@ -1335,7 +1350,9 @@ process SELECT_SNV {
 	label "gatk"	
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
+	tag { sample }
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1374,7 +1391,9 @@ process SELECT_INDEL {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
+	tag { sample }
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1412,8 +1431,9 @@ process SELECT_MIX {
 	label "gatk"	
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'retry'
-
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
+	tag { sample }
 	input:
 		tuple val(sample), path(vcf), path(idx)
 		path ref
@@ -1453,7 +1473,9 @@ process FILTRATION_SNV {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
+	tag { sample }
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1501,7 +1523,9 @@ process FILTRATION_INDEL {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
+	tag { sample }
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1547,7 +1571,9 @@ process FILTRATION_MIX {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
+	tag { sample }
 
 	input:
 		tuple val(sample), path(vcf), path(idx)
@@ -1589,8 +1615,10 @@ process MERGE_VCF {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-	errorStrategy 'retry'	
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 	//publishDir "${params.output}/snvs", mode: 'copy'
+	tag { sample }
 
 	input:
 		tuple val(sample), path(vcf_snv), path(idx_snv), path(vcf_indel), path(idx_indel), path(vcf_mix), path(idx_mix)
@@ -1935,7 +1963,8 @@ process FILTRATION_DRAGEN {
 
 process FILTER_VCF {	
 	label "bioinfotools"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	publishDir "${params.output}/individual_callers_snvs", mode: 'copy'
 	input:
@@ -1966,7 +1995,8 @@ process FILTER_VCF {
 //// GUR: PROCESO NUEVO PARA OBTENER EL VCF FINAL EN LA CARPETA SNVS (EL FINAL VCF)
 process FINAL_VCF {	
 	label "bioinfotools"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	publishDir "${params.output}/snvs", mode: 'copy'
 	input:
@@ -1997,8 +2027,10 @@ process FINAL_VCF {
 /////////// PROCESO CONVERSION BAM/CRAM
 process BAM2CRAM {	
 	label "bioinfotools"
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 	publishDir "${params.output}/cram", mode: 'copy'
+	tag { sample }
 
 	input:
 		tuple val(sample), path(bam), path(bai)
@@ -2029,7 +2061,8 @@ process BAM2CRAM {
 
 process CRAM2BAM {	
 	label "bioinfotools"
-	errorStrategy 'ignore'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 	// publishDir "${params.output}/", mode: 'copy'
 
 	input:
@@ -3025,7 +3058,8 @@ process GVCF_HAPLOTYPECALLER {
 	label "gatk"
 	label "mediumcpu"
 	label "mediummem"
-
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 	input:
 		tuple val(sample), path(bam), path(bai)
 		path bed
@@ -3075,7 +3109,8 @@ process GVCF_HAPLOTYPECALLER {
 
 process COMBINE_GVCF {	
 	label "gatk"
-
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 	input:
 		path("")
 		path("")
