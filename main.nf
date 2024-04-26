@@ -37,6 +37,7 @@ include { BASERECALIBRATOR } from './modules/execution_modules'
 include { APPLYBQSR } from './modules/execution_modules'
 include { MERGEBAM } from './modules/execution_modules' //YBQ: Merge bams when mapping run in parallel
 include { LOCALBAM as LOCALBAM } from './modules/execution_modules'
+INCLUDE { LOCALCRAM } './modules/execution_modules' 
 include { LOCALBAM as LOCALBAM_CNV } from './modules/execution_modules'
 
 //nuevo modulo GUR: SPLIT_BAM y MERGE_SPLIT_VCF
@@ -1501,7 +1502,7 @@ workflow {
 	//YBQ: añadimos la opción de paralelizar el mapping 
 	if ( params.analysis.toUpperCase().contains("M") ) {
 
-		if ( params.parallel_mapping == true ){
+		if ( params.parallel_mapping == true ){ // esto ahora mismo no funciona
 
 			FASTP (DOWNLOAD.out.fastq) //process
 
@@ -1571,12 +1572,34 @@ workflow {
 			}
 	
 		} else {
-			 // si no hay "M", comprobamos que haya un "BAM" local en la carpeta input. 
-			LOCALBAM (
-				params.input,
-				CHECK_PARAMS.out.samples2analyce )
-	
-			bam = LOCALBAM.out.bam
+			 // si no hay "M", comprobamos que haya un "BAM" o un "CRAM" local en la carpeta input. 
+
+			if (params.alignment_file.toUpperCase() == "cram"){
+				
+				LOCALCRAM (
+					params.input,
+					CHECK_PARAMS.out.samples2analyce )
+
+				CRAM2BAM( LOCALCRAM.out.cram, 
+					params.reference_fasta,
+					params.reference_index,
+					params.reference_dict,
+					params.reference_gzi,
+					params.scratch)
+
+				bam = CRAM2BAM.out.bam
+
+
+			} else {
+				
+				LOCALBAM (
+					params.input,
+					CHECK_PARAMS.out.samples2analyce )
+		
+				bam = LOCALBAM.out.bam
+
+			}
+
 		}
 	}
 
@@ -1594,28 +1617,28 @@ workflow {
 	}
 
 
-/// mosdepth_bed -> si queremos el mosdepth bed que se genera para crear la base de datos
-if ( params.mosdepth_bed == true ) {
+	/// mosdepth_bed -> si queremos el mosdepth bed que se genera para crear la base de datos
+	if ( params.mosdepth_bed == true ) {
 
-	MOSDEPTH_COV(
+		MOSDEPTH_COV(
+				bam,
+				params.bed,
+				params.padding )
+		
+	}
+
+	///keep el cram en una carpeta nueva llamada /cram
+	if ( params.keep_cram == true ) {
+
+		BAM2CRAM (
 			bam,
-			params.bed,
-			params.padding )
-	
-}
-
-///keep el cram en una carpeta nueva llamada /cram
-if ( params.keep_cram == true ) {
-
-	BAM2CRAM (
-		bam,
-		params.reference_fasta,
-		params.reference_index,
-		params.reference_dict,
-		params.reference_gzi,
-		params.scratch ) //proceso
-	
-}
+			params.reference_fasta,
+			params.reference_index,
+			params.reference_dict,
+			params.reference_gzi,
+			params.scratch ) //proceso
+		
+	}
 
 
 	// SNV calling
