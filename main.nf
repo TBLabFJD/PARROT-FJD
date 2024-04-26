@@ -37,7 +37,7 @@ include { BASERECALIBRATOR } from './modules/execution_modules'
 include { APPLYBQSR } from './modules/execution_modules'
 include { MERGEBAM } from './modules/execution_modules' //YBQ: Merge bams when mapping run in parallel
 include { LOCALBAM as LOCALBAM } from './modules/execution_modules'
-INCLUDE { LOCALCRAM } './modules/execution_modules' 
+include { LOCALCRAM } './modules/execution_modules' 
 include { LOCALBAM as LOCALBAM_CNV } from './modules/execution_modules'
 
 //nuevo modulo GUR: SPLIT_BAM y MERGE_SPLIT_VCF
