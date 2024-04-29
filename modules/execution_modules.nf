@@ -166,16 +166,11 @@ process LOCAL_CHECK {
 
 	script:
 		if ( analysis.contains("M") )      { extension_local_check = "(.fq|.fq.gz|.fastq|.fastq.gz)" }
-		else if ( analysis.contains("Q") && params.alignment_file.toLowerCase() == 'cram') { extension_local_check = "(.cram)" }
-		else if ( analysis.contains("Q") ) { extension_local_check = "(.bam)" }
-		else if ( analysis.contains("S") && params.alignment_file.toLowerCase() == 'cram') { extension_local_check = "(.cram)" }
-		else if ( analysis.contains("S") ) { extension_local_check = "(.bam)" }
-		else if ( analysis.contains("G") && params.alignment_file.toLowerCase() == 'cram') { extension_local_check = "(.cram)" }
-		else if ( analysis.contains("G") ) { extension_local_check = "(.bam)" }
-		else if ( analysis.contains("C") && params.alignment_file.toLowerCase() == 'cram') { extension_local_check = "(.cram)" }
-		else if ( analysis.contains("C") ) { extension_local_check = "(.bam)" }
-		else if ( analysis.contains("X") && params.alignment_file.toLowerCase() == 'cram') { extension_local_check = "(.cram)" }
-		else if ( analysis.contains("X") ) { extension_local_check = "(.bam)" }
+		else if ( analysis.contains("Q") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("S") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("G") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("C") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("X") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("A") ) { extension_local_check = "(.vcf|.vcf.gz)" }
 		else if ( analysis.contains("N") ) { extension_local_check = "(.tsv|.bed)" }
 
@@ -798,6 +793,8 @@ process LOCALBAM {
 		"""
 }
 
+// con ln -s crea un link simbólico
+
 process LOCALCRAM {	
 	label "bioinfotools"
 
@@ -809,7 +806,7 @@ process LOCALCRAM {
 		tuple \
 			val(sample2analyce_config), \
 			path("${sample2analyce_config}.cram"), \
-			path("${sample2analyce_config}.cram"), emit: cram
+			path("${sample2analyce_config}.crai"), emit: cram
 
 	script:
 		sample2analyce_config = sample2analyce[0]
@@ -2083,9 +2080,9 @@ process CRAM2BAM {
 	output:
 
 		tuple \
-			val(sample2analyce_config), \
-			path("${bam.baseName}.bam"), \
-			path("${bam.baseName}.bai"), emit: bam
+			val(sample), \
+			path("${cram.baseName}.bam"), \
+			path("${cram.baseName}.bai"), emit: bam
 
 		//tuple \
 		//	val(sample), \

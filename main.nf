@@ -37,7 +37,7 @@ include { BASERECALIBRATOR } from './modules/execution_modules'
 include { APPLYBQSR } from './modules/execution_modules'
 include { MERGEBAM } from './modules/execution_modules' //YBQ: Merge bams when mapping run in parallel
 include { LOCALBAM as LOCALBAM } from './modules/execution_modules'
-include { LOCALCRAM } './modules/execution_modules' 
+include { LOCALCRAM } from './modules/execution_modules' 
 include { LOCALBAM as LOCALBAM_CNV } from './modules/execution_modules'
 
 //nuevo modulo GUR: SPLIT_BAM y MERGE_SPLIT_VCF
@@ -1574,11 +1574,13 @@ workflow {
 		} else {
 			 // si no hay "M", comprobamos que haya un "BAM" o un "CRAM" local en la carpeta input. 
 
-			if (params.alignment_file.toUpperCase() == "cram"){
+			if (params.alignment_file.toLowerCase() == "cram"){
 				
 				LOCALCRAM (
 					params.input,
 					CHECK_PARAMS.out.samples2analyce )
+
+				LOCALCRAM.out.cram.view()
 
 				CRAM2BAM( LOCALCRAM.out.cram, 
 					params.reference_fasta,
