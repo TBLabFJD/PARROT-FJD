@@ -166,11 +166,11 @@ process LOCAL_CHECK {
 
 	script:
 		if ( analysis.contains("M") )      { extension_local_check = "(.fq|.fq.gz|.fastq|.fastq.gz)" }
-		else if ( analysis.contains("Q") ) { extension_local_check = "(.bam)" }
-		else if ( analysis.contains("S") ) { extension_local_check = "(.bam)" }
-		else if ( analysis.contains("G") ) { extension_local_check = "(.bam)" }
-		else if ( analysis.contains("C") ) { extension_local_check = "(.bam)" }
-		else if ( analysis.contains("X") ) { extension_local_check = "(.bam)" }
+		else if ( analysis.contains("Q") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("S") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("G") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("C") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("X") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("A") ) { extension_local_check = "(.vcf|.vcf.gz)" }
 		else if ( analysis.contains("N") ) { extension_local_check = "(.tsv|.bed)" }
 
@@ -793,24 +793,28 @@ process LOCALBAM {
 		"""
 }
 
+// con ln -s crea un link simbólico
 
+process LOCALCRAM {	
+	label "bioinfotools"
 
+	input:
+		path inputdir
+		val sample2analyce
+		
+	output:
+		tuple \
+			val(sample2analyce_config), \
+			path("${sample2analyce_config}.cram"), \
+			path("${sample2analyce_config}.crai"), emit: cram
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	script:
+		sample2analyce_config = sample2analyce[0]
+		"""
+		ln -s ${inputdir}/${sample2analyce_config}*.cram ${sample2analyce_config}.cram
+		ln -s ${inputdir}/${sample2analyce_config}*.crai ${sample2analyce_config}.crai
+		"""
+}
 
 
 
@@ -2074,12 +2078,18 @@ process CRAM2BAM {
 		path scratch
 		
 	output:
+
 		tuple \
 			val(sample), \
-			path("${bam.baseName}.bam.bai"), emit: bam_idx
-		tuple \
-			val(sample), \
-			path("${bam.baseName}.bam"), emit: bam
+			path("${cram.baseName}.bam"), \
+			path("${cram.baseName}.bai"), emit: bam
+
+		//tuple \
+		//	val(sample), \
+		//	path("${bam.baseName}.bam.bai"), emit: bam_idx
+		//tuple \
+		//	val(sample), \
+		//	path("${bam.baseName}.bam"), emit: bam
 
 	script:
 		def scratch_field   = scratch ? "--tmp-dir ${scratch}/${sample}_cram2bam" : ""	
@@ -2088,7 +2098,7 @@ process CRAM2BAM {
 		"""
 		${scratch_mkdir}
 		samtools view -b -T ${ref} -o ${cram.baseName}.bam ${cram} 
-		samtools index ${cram.baseName}.bam ${cram.baseName}.bam.bai
+		samtools index ${cram.baseName}.bam ${cram.baseName}.bai
 
 		"""
 }
