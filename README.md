@@ -28,6 +28,8 @@ For using this options, using `--cpus-per-task=44` is recommended.
 You can generate and keep a cram file out of your bam, when running either MS or just S. The cram is generated inside the out folder: /out/cram/. By default: --keep_cram false
 `--keep_cram true`: generate and keep cram file
 
+You can use cram file as input using the option `--alignment_file="cram"`. 
+
 You can generate the mosdepth bed file from your bam, when running either MS or just S. The bed is generated inside the out folder: /out/qc/mosdepth_cov/. By default: --mosdepth_bed false
 `--mosdepth_bed true`: generate the mosdepth.bed file needed to update the db of allele frequencies. 
 
