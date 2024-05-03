@@ -37,8 +37,9 @@ include { BASERECALIBRATOR } from './modules/execution_modules'
 include { APPLYBQSR } from './modules/execution_modules'
 include { MERGEBAM } from './modules/execution_modules' //YBQ: Merge bams when mapping run in parallel
 include { LOCALBAM as LOCALBAM } from './modules/execution_modules'
-include { LOCALCRAM } from './modules/execution_modules' 
+include { LOCALCRAM as LOCALCRAM} from './modules/execution_modules' 
 include { LOCALBAM as LOCALBAM_CNV } from './modules/execution_modules'
+include { LOCALCRAM as LOCALCRAM_CNV } from './modules/execution_modules'
 
 //nuevo modulo GUR: SPLIT_BAM y MERGE_SPLIT_VCF
 include { SPLIT_BAM } from './modules/execution_modules'
@@ -74,7 +75,8 @@ include { FINAL_VCF as FINAL_DRAGEN } from './modules/execution_modules'
 include { FINAL_VCF as FINAL_DEEPVARIANT } from './modules/execution_modules'
 /// GUR
 include { BAM2CRAM } from './modules/execution_modules' 
-include { CRAM2BAM } from './modules/execution_modules' 
+include { CRAM2BAM as CRAM2BAM} from './modules/execution_modules' 
+include { CRAM2BAM as CRAM2BAM_CNV } from './modules/execution_modules' 
 
 
 ///
@@ -1580,7 +1582,7 @@ workflow {
 					params.input,
 					CHECK_PARAMS.out.samples2analyce )
 
-				LOCALCRAM.out.cram.view()
+				//LOCALCRAM.out.cram.view()
 
 				CRAM2BAM( LOCALCRAM.out.cram, 
 					params.reference_fasta,
@@ -1807,14 +1809,40 @@ workflow {
 			bai_collecteted = MAPPING.out.bam.collect().flatten().filter( ~/.*bai$/ ).toList()
 
 		} else {
+			
 
-			LOCALBAM_CNV (
+			if (params.alignment_file.toLowerCase() == "cram"){
+				// esto no hace falta porque ya lo hacemos arriba. 
+				//LOCALCRAM_CNV (
+				//	params.input,
+				//	CHECK_PARAMS.out.samples2analyce )
+
+				//LOCALCRAM_CNV.out.cram.view()
+
+				//CRAM2BAM_CNV( LOCALCRAM_CNV.out.cram, 
+				//	params.reference_fasta,
+				//	params.reference_index,
+				//	params.reference_dict,
+				//	params.reference_gzi,
+				//	params.scratch)
+
+				bam = CRAM2BAM.out.bam
+				bam_collecteted = CRAM2BAM.out.bam.collect().flatten().filter( ~/.*bam$/ ).toList()
+				bai_collecteted = CRAM2BAM.out.bam.collect().flatten().filter( ~/.*bai$/ ).toList()
+
+			} else {
+
+				LOCALBAM_CNV (
 				params.input,
 				CHECK_PARAMS.out.controlsamples )
 			
-			bam = LOCALBAM_CNV.out.bam
-			bam_collecteted = LOCALBAM_CNV.out.bam.collect().flatten().filter( ~/.*bam$/ ).toList()
-			bai_collecteted = LOCALBAM_CNV.out.bam.collect().flatten().filter( ~/.*bai$/ ).toList()
+				bam = LOCALBAM_CNV.out.bam
+				bam_collecteted = LOCALBAM_CNV.out.bam.collect().flatten().filter( ~/.*bam$/ ).toList()
+				bai_collecteted = LOCALBAM_CNV.out.bam.collect().flatten().filter( ~/.*bai$/ ).toList()
+
+			}
+
+			
 
 		}
 
