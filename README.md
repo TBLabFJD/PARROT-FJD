@@ -36,6 +36,16 @@ You can generate the mosdepth bed file from your bam, when running either MS or 
 You need to define with what technique your data was generated: WES, WGS or CES. By default is WES
 	`--technique WES` : My data is/are WES samples
 
+When you use the D (Download option) you need to specify the path to your "bs" software is:
+bs is the BaseSpace Sequence Hub CLI software.
+To download the software visit the lik and follow instructions: https://developer.basespace.illumina.com/docs/content/documentation/cli/cli-overview
+After downloading you need to authenticate with your basespace account running the following command: bs auth
+After authentication you can already run PARROT-FJD with the D (download option) by specifying where your "bs" software is stored.
+Example: TBLAB -> --baseuser /home/graciela/bin/
+Example: UAM -> --baseuser /lustre/home/graciela/
+
+`--baseuser /lustre/home/graciela/ `: download fastqs from basespace for graciela when running in UAM
+
 There are different profiles available depending on the reference release to use, where to run it, and type of contenerization:
 
 Mandatory to choose one:
