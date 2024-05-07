@@ -23,8 +23,10 @@ samples      : $params.samples
  * Import modules 
  */
 include { BS_CHECK } from './modules/execution_modules'
+include { BS_CHECK_GUR } from './modules/execution_modules'
 include { LOCAL_CHECK } from './modules/execution_modules'
 include { BS_COPY } from './modules/execution_modules'
+include { BS_COPY_GUR } from './modules/execution_modules'
 include { FASTQ_CONCATENATION } from './modules/execution_modules'
 include { FASTP } from './modules/execution_modules' //YBQ: Fastp for splut fastqs
 include { BWA } from './modules/execution_modules'
@@ -272,7 +274,7 @@ workflow CHECK_PARAMS {
 
 		if ( params.analysis.toUpperCase().contains("D") ) {
 
-			BS_CHECK(
+/* 			BS_CHECK(
 				params.input,
 				params.baseuser,
 				params.samples,
@@ -280,6 +282,15 @@ workflow CHECK_PARAMS {
 			controlsamples  = BS_CHECK.out.controlsamples
 			samples2analyce = BS_CHECK.out.samples2analyce
 			datasets = BS_CHECK.out.datasets
+ */
+			BS_CHECK_GUR(
+				params.input,
+				params.baseuser,
+				params.samples,
+				params.analysis.toUpperCase() )
+			controlsamples  = BS_CHECK_GUR.out.controlsamples
+			samples2analyce = BS_CHECK_GUR.out.samples2analyce
+			datasets = BS_CHECK_GUR.out.datasets
 
 
 		} else {
@@ -316,13 +327,22 @@ workflow DOWNLOAD {
 
 		if ( params.analysis.toUpperCase().contains("D") ) {
 
-			BS_COPY (
+/* 			BS_COPY (
 				params.input,
 				samplename,
 				params.baseuser,
 				datasets )
 
-			fastq = BS_COPY.out.fastq
+			fastq = BS_COPY.out.fastq */
+
+			BS_COPY_GUR (
+				params.input,
+				samplename,
+				params.baseuser,
+				datasets )
+
+			fastq = BS_COPY_GUR.out.fastq
+
 
 		} else {
 
