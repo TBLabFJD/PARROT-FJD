@@ -237,9 +237,9 @@ process BS_CHECK_GUR {
 
 			# List all the Output.Datasets (folders containing the reads per sample and per lane) and 
 			# filter to keep the ones containing the pattern *_L* to avoid duplicates.
-			# ${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name | grep "_L" | grep -v "Undetermined" > datasets.txt
+			${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name | grep "_L" | grep -v "Undetermined" > datasets.txt
 			# ESTA LINEA MODIFICADA SIRVE PARA QUE LOS PROYECTOS QUE NO TIENEN SUS FASTQS SEPARADOS POR LANES SE PUEDAN DESCARGAR TAMBIEN (a partir del CES260 y alguno antiguo no tiene lanes, ya estan "pegados" los archivos de lanes
-			${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv | grep "common.fastq" | awk -F, '{print \$2 "," \$1}' | grep -v "Undetermined" > datasets.txt
+			# ${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv | grep "common.fastq" | awk -F, '{print \$2 "," \$1}' | grep -v "Undetermined" > datasets.txt
 			"""
 		
 
