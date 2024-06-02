@@ -189,9 +189,6 @@ process BS_CHECK_GUR {
 			# Appsessions are the analysis done in a project. 
 			# We assume that these are basecalling and that the last one is the correct one.
 			appsession_id=\$(${baseuser}bs list appsession -f csv -F Id --project-name "${project}" | tail -n 1)
-			#apsession_id especial para el proyecto CES252 -> el comando de la linea anterior coge el ultimpo apsession id que suele ser el mas reciente, en este caso hay que coger el penultimo que es el más nuevo
-			#appsession_id="711750057"
-			appsession_id="711334751"
 
 			# List all the Output.Datasets (folders containing the reads per sample and per lane) and 
 			# filter to keep the ones containing the pattern *_L* to avoid duplicates.
@@ -270,7 +267,10 @@ process BS_CHECK_GUR {
 			# First the last appsession Id is retrieved. 
 			# Appsessions are the analysis done in a project. 
 			# We assume that these are basecalling and that the last one is the correct one.
-			appsession_id=\$(${baseuser}bs list appsession -f csv -F Id --project-name "${project}" | tail -n 1)
+			#appsession_id=\$(${baseuser}bs list appsession -f csv -F Id --project-name "${project}" | tail -n 1)
+			#apsession_id especial para el proyecto CES252 -> el comando de la linea anterior coge el ultimpo apsession id que suele ser el mas reciente, en este caso hay que coger el penultimo que es el más nuevo
+			appsession_id="711750057"
+			#appsession_id="711334751"
 
 			# List all the Output.Datasets (folders containing the reads per sample and per lane) and 
 			# filter to keep the ones containing the pattern *_L* to avoid duplicates.
