@@ -142,8 +142,14 @@ manta 1.6.0
 BWA 0.7.17-r1198-dirty
 bcftools 1.15
 bedtools 2.27.1
-
 R version 4.2.3
 python 3.6
+
+## License
+
+PARROT-FJD source code is provided under the [**Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**](https://creativecommons.org/licenses/by-nc-sa/4.0/). PARROT-FJD includes several third party packages provided under other open source licenses, please check them for additional details.
+
+[![Licencia de Creative Commons](https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
+
 
 
