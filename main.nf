@@ -980,6 +980,7 @@ workflow ANNOTATION {
 			params.dbNSFP_gene,
 			params.omim,
 			params.regiondict,
+			params.domino,
 			params.maf,
 			params.genelist,
 			params.glowgenes,
