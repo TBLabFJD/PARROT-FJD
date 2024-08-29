@@ -2709,7 +2709,7 @@ process VEP {
 	script:
 		def dbscSNV_config = dbscSNV ? "--plugin dbscSNV,${dbscSNV} " : ''
 		def loFtool_config = loFtool ? "--plugin LoFtool,${loFtool} " : ''
-		def exACpLI_config = exACpLI ? "--plugin ExACpLI,${exACpLI} " : ''
+		def exACpLI_config = exACpLI ? "--plugin pLI,${exACpLI} " : ''
 		def dbNSFP_config  = dbNSFP  ? "--plugin dbNSFP,${dbNSFP},\
 LRT_pred,M-CAP_pred,MetaLR_pred,MetaSVM_pred,MutationAssessor_pred,MutationTaster_pred,PROVEAN_pred,\
 FATHMM_pred,MetaRNN_pred,PrimateAI_pred,DEOGEN2_pred,BayesDel_addAF_pred,BayesDel_noAF_pred,ClinPred_pred,\
