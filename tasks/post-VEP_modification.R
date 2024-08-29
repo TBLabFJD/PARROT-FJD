@@ -332,8 +332,8 @@ df_out$HGVSp = vep$HGVSp
 df_out$DISTANCE = as.numeric(vep$DISTANCE)
 df_out$STRAND = vep$STRAND
 df_out$Interpro_domain = vep$Interpro_domain
-
-
+df_out$Interpro_domain = vep$Interpro_domain
+df_out$Domino_Score = vep$Domino_Score
 
 
 #===============#
