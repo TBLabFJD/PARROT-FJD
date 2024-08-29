@@ -507,7 +507,8 @@ df_out$MaxEntScan_ref = as.numeric(vep$MaxEntScan_ref)
 print("Conservation and phylogeny")
 
 df_out$LoFtool = as.numeric(vep$LoFtool)
-df_out$ExACpLI = as.numeric(vep$ExACpLI)
+#antiguo "ExACpLI ahora es pLI_gene_value
+df_out$ExACpLI = as.numeric(vep$pLI_gene_value)
 df_out$gnomAD_exomes_CCR = vep$gnomAD_exomes_CCR
 df_out$phastCons30way_mammalian = as.numeric(vep$phastCons30way_mammalian)
 df_out$phyloP30way_mammalian = as.numeric(vep$phyloP30way_mammalian)
