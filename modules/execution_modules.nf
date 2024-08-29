@@ -2787,6 +2787,7 @@ process PVM {
 		path dbNSFP_gene 
 		path omim 
 		path regiondict 
+		path domino 
 		val maf 
 		path genefilter 
 		path glowgenes 
@@ -2814,6 +2815,7 @@ process PVM {
 		--numheader \${header_row} \\
 		--dbNSFPgene ${dbNSFP_gene} \\
 		--regiondict ${regiondict} \\
+		--domino ${domino} \\
 		--automap ./ \\
 		--maf ${maf} \\
 		${omim_field}\\
