@@ -28,6 +28,9 @@ option_list = list(
   make_option(c("-m", "--omim"), type="character", default=NULL,
               help="\t\tOMIM information", metavar="character"),
   
+  make_option(c("-s", "--domino"), type="character", default=NULL, 
+              help="\t\tdomino file", metavar="character"),
+  
   make_option(c("-n", "--numheader"), type="integer", default=1,
               help="\t\tNumber of the row where the header is", metavar="character"),
   
@@ -51,6 +54,7 @@ opt = parse_args(opt_parser)
 input = opt$input
 output = opt$output
 dbNSFPgenepath <- opt$dbNSFPgene
+dominopath <- opt$domino
 dict_region_path <- opt$regiondict
 omim_path = opt$omim
 skip = opt$numheader
@@ -95,6 +99,9 @@ vep = read.delim(input, header = TRUE, skip = skip-1, stringsAsFactors = F, quot
 dbNSFP_gene = read.delim(dbNSFPgenepath, header = TRUE, stringsAsFactors = F, quote = "")
 vep = merge(vep, dbNSFP_gene, by.x = "SYMBOL", by.y = "Gene_name", all.x = T)
 
+# domino: add Graci
+domino = read.delim(dominopath, header = TRUE, stringsAsFactors = F, quote = "")
+vep = merge(vep, domino, by.x = "SYMBOL", by.y = "Gene_name", all.x = T)
 
 # OMIM
 if (!is.null(omim_path)){
