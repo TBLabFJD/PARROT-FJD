@@ -2692,6 +2692,8 @@ process VEP {
 		path(spliceAI_SNV_tbi)
 		path(spliceAI_INDEL)
 		path(spliceAI_INDEL_tbi)
+		path(REVEL)
+		path(REVEL_tbi)
 		path vep_cache
 		path vep_plugins
 		path vep_fasta
@@ -2730,6 +2732,7 @@ phyloP30way_mammalian,phastCons30way_mammalian,GERP++_RS,Interpro_domain,GTEx_V8
 		def mAF_FJD_COHORT_config = mAF_FJD_COHORT ? "--custom ${mAF_FJD_COHORT},FJD_MAF,vcf,exact,0,AF,AC " : ''
 		def spliceAI_SNV_config   = spliceAI_SNV   ? "--custom ${spliceAI_SNV},SpliceAI_SNV,vcf,exact,0,SpliceAI " : ''
 		def spliceAI_INDEL_config = spliceAI_INDEL ? "--custom ${spliceAI_INDEL},SpliceAI_INDEL,vcf,exact,0,SpliceAI " : ''
+		def REVEL_config       	  = REVEL          ? "--custom ${REVEL},REVEL,vcf,exact,0,Score " : ''
 		def sample_info_config    = sample_info    ? "--custom ${sample_info},SAMPLE,vcf,exact,0\$(cat ${sample_info_fields}) " : ''
 
 		"""
@@ -2761,6 +2764,7 @@ phyloP30way_mammalian,phastCons30way_mammalian,GERP++_RS,Interpro_domain,GTEx_V8
 		${mAF_FJD_COHORT_config}\\
 		${spliceAI_SNV_config}\\
 		${spliceAI_INDEL_config}\\
+		${REVEL_config}\\
 		${sample_info_config}
 
 		"""
