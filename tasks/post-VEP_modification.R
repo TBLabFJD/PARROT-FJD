@@ -344,6 +344,7 @@ print("Pathogenicity")
 df_out$CLNSIG = vep$ClinVar_CLNSIG
 df_out$CLNREVSTAT = vep$ClinVar_CLNREVSTAT
 df_out$CLNDN = vep$ClinVar_CLNDN
+df_out$CLNSIGCONF = vep$CLNSIGCONF                                                                      
 df_out$OMIM_phenotype = vep$Phenotypes
 df_out$Orphanet_disorder = vep$Orphanet_disorder
 df_out$Orphanet_association_type = vep$Orphanet_association_type
