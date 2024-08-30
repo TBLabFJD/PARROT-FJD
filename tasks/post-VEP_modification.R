@@ -406,6 +406,7 @@ print("Pathogenicity prediction")
 df_out$CADD_PHRED = as.numeric(vep$CADD_PHRED)
 df_out$CADD_RAW = as.numeric(vep$CADD_RAW)
 df_out$MutScore = as.numeric(vep$Mut_Score)
+df_out$REVELScore = as.numeric(vep$REVEL_Score)
 
 patho_norm_func = function(predictions){
   predictions = gsub(";", ",", predictions)
