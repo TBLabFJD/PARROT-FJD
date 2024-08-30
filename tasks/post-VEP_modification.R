@@ -392,6 +392,12 @@ df_out$CSVS_AF = as.numeric(unlist(lapply(vep$CSVS_AF, function(x) strsplit(x, "
 df_out$CSVS_AC = as.numeric(unlist(lapply(vep$CSVS_AC, function(x) strsplit(x, ",")[[1]][1])))
 df_out$FJD_MAF_AF = as.numeric(unlist(lapply(vep$FJD_MAF_AF, function(x) strsplit(x, ",")[[1]][1])))
 df_out$FJD_MAF_AC = as.numeric(unlist(lapply(vep$FJD_MAF_AC, function(x) strsplit(x, ",")[[1]][1])))
+##add new columns del MAF_FJD de DHR vs pseudocontroles (SON DE OJO LOS PSEUDOCONTROLES)
+df_out$FJD_MAF_AF_DS_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AF_DS_irdt, function(x) strsplit(x, ",")[[1]][1])))
+df_out$FJD_MAF_AC_DS_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AC_DS_irdt, function(x) strsplit(x, ",")[[1]][1])))
+df_out$FJD_MAF_AF_P_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AF_P_eyeg, function(x) strsplit(x, ",")[[1]][1])))
+df_out$FJD_MAF_AC_P_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AC_P_eyeg, function(x) strsplit(x, ",")[[1]][1])))
+                                             
 df_out$denovoVariants_SAMPLE_CT = vep$denovoVariants_SAMPLE_CT
 
 
