@@ -151,5 +151,6 @@ PARROT-FJD source code is provided under the [**Creative Commons Attribution-Non
 
 [![Licencia de Creative Commons](https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-
+## Projects
+PI22/00579 “DB4DISCOVERY. Desarrollo de métodos de priorización y descubrimientos de variantes mediante el reuso de información genómica agregada en una base de datos específica de una cohorte.” ISCIII
 
