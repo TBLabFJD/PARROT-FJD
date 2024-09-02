@@ -2792,6 +2792,7 @@ process PVM {
 		path omim 
 		path regiondict 
 		path domino 
+		path tissue_expression
 		val maf 
 		path genefilter 
 		path glowgenes 
@@ -2820,6 +2821,7 @@ process PVM {
 		--dbNSFPgene ${dbNSFP_gene} \\
 		--regiondict ${regiondict} \\
 		--domino ${domino} \\
+		--expression ${tissue_expression} \\
 		--automap ./ \\
 		--maf ${maf} \\
 		${omim_field}\\
