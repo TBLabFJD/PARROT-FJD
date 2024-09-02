@@ -983,6 +983,7 @@ workflow ANNOTATION {
 			params.omim,
 			params.regiondict,
 			params.domino,
+                        params.tissue_expression,
 			params.maf,
 			params.genelist,
 			params.glowgenes,
