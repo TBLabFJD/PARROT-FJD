@@ -30,6 +30,9 @@ option_list = list(
   
   make_option(c("-s", "--domino"), type="character", default=NULL, 
               help="\t\tdomino file", metavar="character"),
+
+  make_option(c("-e", "--expression"), type="character", default=NULL, 
+            help="\t\ttissue expression file", metavar="character"),
   
   make_option(c("-n", "--numheader"), type="integer", default=1,
               help="\t\tNumber of the row where the header is", metavar="character"),
@@ -55,6 +58,7 @@ input = opt$input
 output = opt$output
 dbNSFPgenepath <- opt$dbNSFPgene
 dominopath <- opt$domino
+expressionpath <- opt$expression
 dict_region_path <- opt$regiondict
 omim_path = opt$omim
 skip = opt$numheader
@@ -102,6 +106,10 @@ vep = merge(vep, dbNSFP_gene, by.x = "SYMBOL", by.y = "Gene_name", all.x = T)
 # domino: add Graci
 domino = read.delim(dominopath, header = TRUE, stringsAsFactors = F, quote = "")
 vep = merge(vep, domino, by.x = "SYMBOL", by.y = "Gene_name", all.x = T)
+
+# tissue expression: add Yoli
+expression = read.delim(expressionpath, header = TRUE, stringsAsFactors = F, quote = "")
+vep = merge(vep, expression, by.x = "SYMBOL", by.y = "Gene.name", all.x = T)
 
 # OMIM
 if (!is.null(omim_path)){
@@ -530,7 +538,7 @@ df_out$MGI_mouse_phenotype = vep$MGI_mouse_phenotype_filt
 #=====================================================#
 #Expression, process, route, function and interaction #
 #=====================================================#
-print("Conservation and phylogeny")
+print("Expression, process, route, function and interaction")
 
 df_out$GTEx_V8_gene = vep$GTEx_V8_gene
 df_out$GTEx_V8_tissue = vep$GTEx_V8_tissue
@@ -541,7 +549,21 @@ df_out$GO_cellular_component = vep$GO_cellular_component
 df_out$GO_molecular_function = vep$GO_molecular_function
 df_out$Interactions_IntAct = vep$Interactions.IntAct.
 
-
+df_out$retina_RNA_tissue_consensus = round(vep$retina,2)
+df_out$testis_RNA_tissue_consensus = round(vep$testis,2)
+df_out$kidney_RNA_tissue_consensus = round(vep$kidney,2)
+df_out$brain_max_RNA_tissue_consensus = round(vep$brain_max,2)
+df_out$glands_max_RNA_tissue_consensus = round(vep$glands_max,2)
+df_out$digestive_max_RNA_tissue_consensus = round(vep$digestive_max,2)
+df_out$heart_RNA_tissue_consensus = round(vep$heart.muscle,2)
+df_out$liver_RNA_tissue_consensus = round(vep$liver,2)
+df_out$lung_RNA_tissue_consensus = round(vep$lung,2)
+df_out$pancreas_RNA_tissue_consensus = round(vep$pancreas,2)
+df_out$skel_muscle_RNA_tissue_consensus = round(vep$skeletal.muscle,2)
+df_out$skin_RNA_tissue_consensus = round(vep$skin,2)
+df_out$mean_expression_RNA_tissue_consensus = round(vep$mean_exp,2)
+df_out$retina_ratio_exp_RNA_tissue_consensus = round(vep$retina_ratio, 2)
+                           
 df_out$Original_pos = vep$SAMPLE_Original_pos
 df_out$variant_id = vep$SAMPLE_variant_id
 
