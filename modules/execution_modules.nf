@@ -2716,7 +2716,7 @@ process VEP {
 LRT_pred,M-CAP_pred,MetaLR_pred,MetaSVM_pred,MutationAssessor_pred,MutationTaster_pred,PROVEAN_pred,\
 FATHMM_pred,MetaRNN_pred,PrimateAI_pred,DEOGEN2_pred,BayesDel_addAF_pred,BayesDel_noAF_pred,ClinPred_pred,\
 LIST-S2_pred,Aloft_pred,fathmm-MKL_coding_pred,fathmm-XF_coding_pred,Polyphen2_HDIV_pred,Polyphen2_HVAR_pred,\
-phyloP30way_mammalian,phastCons30way_mammalian,GERP++_RS,Interpro_domain,GTEx_V8_gene,GTEx_V8_tissue " : ''
+phyloP470way_mammalian,phastCons470way_mammalian,GERP++_RS,Interpro_domain,GTEx_V8_eQTL_gene,GTEx_V8_eQTL_tissue " : ''
 		def maxEntScan_config     = maxEntScan    ? "--plugin MaxEntScan,${maxEntScan} " : ''
 		def cADD_config           = cADD_INDELS && cADD_SNVS ? "--plugin CADD,${cADD_INDELS},${cADD_SNVS} " : ''
 		def kaviar_config         = kaviar         ? "--custom ${kaviar},kaviar,vcf,exact,0,AF,AC,AN " : ''
