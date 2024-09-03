@@ -527,8 +527,8 @@ df_out$LoFtool = as.numeric(vep$LoFtool)
 #antiguo "ExACpLI ahora es pLI_gene_value
 df_out$ExACpLI = as.numeric(vep$pLI_gene_value)
 df_out$gnomAD_exomes_CCR = vep$gnomAD_exomes_CCR
-df_out$phastCons30way_mammalian = as.numeric(vep$phastCons30way_mammalian)
-df_out$phyloP30way_mammalian = as.numeric(vep$phyloP30way_mammalian)
+df_out$phastCons30way_mammalian = as.numeric(vep$phastCons470way_mammalian)
+df_out$phyloP30way_mammalian = as.numeric(vep$phyloP470way_mammalian)
 df_out$MGI_mouse_phenotype = vep$MGI_mouse_phenotype_filt
 
 
@@ -540,8 +540,8 @@ df_out$MGI_mouse_phenotype = vep$MGI_mouse_phenotype_filt
 #=====================================================#
 print("Expression, process, route, function and interaction")
 
-df_out$GTEx_V8_gene = vep$GTEx_V8_gene
-df_out$GTEx_V8_tissue = vep$GTEx_V8_tissue
+df_out$GTEx_V8_gene = vep$GTEx_V8_eQTL_gene
+df_out$GTEx_V8_tissue = vep$GTEx_V8_eQTL_tissue
 df_out$`Expression_GNF-Atlas` = vep$Expression.GNF.Atlas.
 df_out$Pathway_KEGG = vep$Pathway.KEGG._full
 df_out$GO_biological_process = vep$GO_biological_process
