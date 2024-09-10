@@ -375,9 +375,9 @@ df_out$gnomADg_nhomalt = as.numeric(unlist(lapply(vep$gnomADg_nhomalt, function(
 df_out$gnomADg_cov_median = round(unlist(lapply(vep$gnomADg_cov_median, function(x) mean(as.numeric(strsplit(gsub("(?<![eE])-","0",x, perl = T), ",")[[1]])))))
 df_out$gnomADg_cov_perc_20x = round(unlist(lapply(vep$gnomADg_cov_perc_20x, function(x) mean(as.numeric(strsplit(gsub("(?<![eE])-","0",x, perl = T), ",")[[1]])))),2)
 df_out$gnomADg_filter = vep$gnomADg_filt
-df_out$gnomADg_grpmax = vep$gnomADg_grpmax
-df_out$gnomADg_AF_grpmax = vep$gnomADg_AF_grpmax
-df_out$gnomADg_AC_grpmax = as.numeric(unlist(lapply(vep$gnomADg_AC_grpmax, function(x) strsplit(x, ",")[[1]][1])))
+df_out$gnomADg_popmax = vep$gnomADg_grpmax
+df_out$gnomADg_AF_popmax = vep$gnomADg_AF_grpmax
+df_out$gnomADg_AC_popmax = as.numeric(unlist(lapply(vep$gnomADg_AC_grpmax, function(x) strsplit(x, ",")[[1]][1])))
 df_out$gnomADg_AF_nfe = as.numeric(unlist(lapply(vep$gnomADg_AF_nfe, function(x) strsplit(x, ",")[[1]][1])))
 df_out$gnomADg_AC_nfe = as.numeric(unlist(lapply(vep$gnomADg_AC_nfe, function(x) strsplit(x, ",")[[1]][1])))
 
@@ -388,9 +388,9 @@ df_out$gnomADe_nhomalt = as.numeric(unlist(lapply(vep$gnomADe_nhomalt, function(
 df_out$gnomADe_cov_median = round(unlist(lapply(vep$gnomADe_cov_median, function(x) mean(as.numeric(strsplit(gsub("(?<![eE])-","0",x, perl = T), ",")[[1]])))))
 df_out$gnomADe_cov_perc_20x = round(unlist(lapply(vep$gnomADe_cov_perc_20x, function(x) mean(as.numeric(strsplit(gsub("(?<![eE])-","0",x, perl = T), ",")[[1]])))),2)
 df_out$gnomADe_filter = vep$gnomADe_filt
-df_out$gnomADe_grpmax = vep$gnomADe_grpmax
-df_out$gnomADe_AF_grpmax = vep$gnomADe_AF_grpmax
-df_out$gnomADe_AC_grpmax = as.numeric(unlist(lapply(vep$gnomADe_AC_grpmax, function(x) strsplit(x, ",")[[1]][1])))
+df_out$gnomADe_popmax = vep$gnomADe_grpmax
+df_out$gnomADe_AF_popmax = vep$gnomADe_AF_grpmax
+df_out$gnomADe_AC_popmax = as.numeric(unlist(lapply(vep$gnomADe_AC_grpmax, function(x) strsplit(x, ",")[[1]][1])))
 df_out$gnomADe_AF_nfe = as.numeric(unlist(lapply(vep$gnomADe_AF_nfe, function(x) strsplit(x, ",")[[1]][1])))
 df_out$gnomADe_AC_nfe = as.numeric(unlist(lapply(vep$gnomADe_AC_nfe, function(x) strsplit(x, ",")[[1]][1])))
 
