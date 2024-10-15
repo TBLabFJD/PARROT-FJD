@@ -2692,6 +2692,8 @@ process VEP {
 		path(spliceAI_SNV_tbi)
 		path(spliceAI_INDEL)
 		path(spliceAI_INDEL_tbi)
+		path(REVEL)
+		path(REVEL_tbi)
 		path vep_cache
 		path vep_plugins
 		path vep_fasta
@@ -2709,27 +2711,28 @@ process VEP {
 	script:
 		def dbscSNV_config = dbscSNV ? "--plugin dbscSNV,${dbscSNV} " : ''
 		def loFtool_config = loFtool ? "--plugin LoFtool,${loFtool} " : ''
-		def exACpLI_config = exACpLI ? "--plugin ExACpLI,${exACpLI} " : ''
+		def exACpLI_config = exACpLI ? "--plugin pLI,${exACpLI} " : ''
 		def dbNSFP_config  = dbNSFP  ? "--plugin dbNSFP,${dbNSFP},\
 LRT_pred,M-CAP_pred,MetaLR_pred,MetaSVM_pred,MutationAssessor_pred,MutationTaster_pred,PROVEAN_pred,\
 FATHMM_pred,MetaRNN_pred,PrimateAI_pred,DEOGEN2_pred,BayesDel_addAF_pred,BayesDel_noAF_pred,ClinPred_pred,\
 LIST-S2_pred,Aloft_pred,fathmm-MKL_coding_pred,fathmm-XF_coding_pred,Polyphen2_HDIV_pred,Polyphen2_HVAR_pred,\
-phyloP30way_mammalian,phastCons30way_mammalian,GERP++_RS,Interpro_domain,GTEx_V8_gene,GTEx_V8_tissue " : ''
+phyloP470way_mammalian,phastCons470way_mammalian,GERP++_RS,Interpro_domain,GTEx_V8_eQTL_gene,GTEx_V8_eQTL_tissue " : ''
 		def maxEntScan_config     = maxEntScan    ? "--plugin MaxEntScan,${maxEntScan} " : ''
 		def cADD_config           = cADD_INDELS && cADD_SNVS ? "--plugin CADD,${cADD_INDELS},${cADD_SNVS} " : ''
 		def kaviar_config         = kaviar         ? "--custom ${kaviar},kaviar,vcf,exact,0,AF,AC,AN " : ''
 		def cCRS_DB_config        = cCRS_DB        ? "--custom ${cCRS_DB},gnomAD_exomes_CCR,bed,overlap,0 " : ''
 		def dENOVO_DB_config      = dENOVO_DB      ? "--custom ${dENOVO_DB},denovoVariants,vcf,exact,0,SAMPLE_CT " : ''
-		def cLINVAR_config        = cLINVAR        ? "--custom ${cLINVAR},ClinVar,vcf,exact,0,CLNSIG,CLNREVSTAT,CLNDN " : ''
-		def gNOMADg_config        = gNOMADg        ? "--custom ${gNOMADg},gnomADg,vcf,exact,0,AF,AC,AN,nhomalt,popmax,AF_popmax,AC_popmax,AF_nfe,AC_nfe,filt " : ''
-		def gNOMADe_config        = gNOMADe        ? "--custom ${gNOMADe},gnomADe,vcf,exact,0,AF,AC,AN,nhomalt,popmax,AF_popmax,AC_popmax,AF_nfe,AC_nfe,filt " : ''
+		def cLINVAR_config        = cLINVAR        ? "--custom ${cLINVAR},ClinVar,vcf,exact,0,CLNSIG,CLNREVSTAT,CLNDN,CLNSIGCONF " : ''
+		def gNOMADg_config        = gNOMADg        ? "--custom ${gNOMADg},gnomADg,vcf,exact,0,AF,AC,AN,nhomalt,grpmax,AF_grpmax,AC_grpmax,AF_nfe,AC_nfe,filt " : ''
+		def gNOMADe_config        = gNOMADe        ? "--custom ${gNOMADe},gnomADe,vcf,exact,0,AF,AC,AN,nhomalt,grpmax,AF_grpmax,AC_grpmax,AF_nfe,AC_nfe,filt " : ''
 		def gNOMADg_cov_config    = gNOMADg_cov    ? "--custom ${gNOMADg_cov},gnomADg_cov,vcf,overlap,0,median,perc_20x " : ''
 		def gNOMADe_cov_config    = gNOMADe_cov    ? "--custom ${gNOMADe_cov},gnomADe_cov,vcf,overlap,0,median,perc_20x " : ''
 		def cSVS_config           = cSVS           ? "--custom ${cSVS},CSVS,vcf,exact,0,AF,AC " : ''
 		def mutScore_config       = mutScore       ? "--custom ${mutScore},Mut,vcf,exact,0,Score " : ''
-		def mAF_FJD_COHORT_config = mAF_FJD_COHORT ? "--custom ${mAF_FJD_COHORT},FJD_MAF,vcf,exact,0,AF,AC " : ''
+		def mAF_FJD_COHORT_config = mAF_FJD_COHORT ? "--custom ${mAF_FJD_COHORT},FJD_MAF,vcf,exact,0,AF,AC,AF_DS_irdt,AC_DS_irdt,AF_P_eyeg,AC_P_eyeg " : ''
 		def spliceAI_SNV_config   = spliceAI_SNV   ? "--custom ${spliceAI_SNV},SpliceAI_SNV,vcf,exact,0,SpliceAI " : ''
 		def spliceAI_INDEL_config = spliceAI_INDEL ? "--custom ${spliceAI_INDEL},SpliceAI_INDEL,vcf,exact,0,SpliceAI " : ''
+		def REVEL_config       	  = REVEL          ? "--custom ${REVEL},REVEL,vcf,exact,0,Score " : ''
 		def sample_info_config    = sample_info    ? "--custom ${sample_info},SAMPLE,vcf,exact,0\$(cat ${sample_info_fields}) " : ''
 
 		"""
@@ -2761,6 +2764,7 @@ phyloP30way_mammalian,phastCons30way_mammalian,GERP++_RS,Interpro_domain,GTEx_V8
 		${mAF_FJD_COHORT_config}\\
 		${spliceAI_SNV_config}\\
 		${spliceAI_INDEL_config}\\
+		${REVEL_config}\\
 		${sample_info_config}
 
 		"""
@@ -2787,6 +2791,8 @@ process PVM {
 		path dbNSFP_gene 
 		path omim 
 		path regiondict 
+		path domino 
+		path tissue_expression
 		val maf 
 		path genefilter 
 		path glowgenes 
@@ -2814,6 +2820,8 @@ process PVM {
 		--numheader \${header_row} \\
 		--dbNSFPgene ${dbNSFP_gene} \\
 		--regiondict ${regiondict} \\
+		--domino ${domino} \\
+		--expression ${tissue_expression} \\
 		--automap ./ \\
 		--maf ${maf} \\
 		${omim_field}\\

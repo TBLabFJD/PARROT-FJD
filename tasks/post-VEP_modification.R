@@ -28,6 +28,12 @@ option_list = list(
   make_option(c("-m", "--omim"), type="character", default=NULL,
               help="\t\tOMIM information", metavar="character"),
   
+  make_option(c("-s", "--domino"), type="character", default=NULL, 
+              help="\t\tdomino file", metavar="character"),
+
+  make_option(c("-e", "--expression"), type="character", default=NULL, 
+            help="\t\ttissue expression file", metavar="character"),
+  
   make_option(c("-n", "--numheader"), type="integer", default=1,
               help="\t\tNumber of the row where the header is", metavar="character"),
   
@@ -51,6 +57,8 @@ opt = parse_args(opt_parser)
 input = opt$input
 output = opt$output
 dbNSFPgenepath <- opt$dbNSFPgene
+dominopath <- opt$domino
+expressionpath <- opt$expression
 dict_region_path <- opt$regiondict
 omim_path = opt$omim
 skip = opt$numheader
@@ -95,6 +103,13 @@ vep = read.delim(input, header = TRUE, skip = skip-1, stringsAsFactors = F, quot
 dbNSFP_gene = read.delim(dbNSFPgenepath, header = TRUE, stringsAsFactors = F, quote = "")
 vep = merge(vep, dbNSFP_gene, by.x = "SYMBOL", by.y = "Gene_name", all.x = T)
 
+# domino: add Graci
+domino = read.delim(dominopath, header = TRUE, stringsAsFactors = F, quote = "")
+vep = merge(vep, domino, by.x = "SYMBOL", by.y = "Gene_name", all.x = T)
+
+# tissue expression: add Yoli
+expression = read.delim(expressionpath, header = TRUE, stringsAsFactors = F, quote = "")
+vep = merge(vep, expression, by.x = "SYMBOL", by.y = "Gene.name", all.x = T)
 
 # OMIM
 if (!is.null(omim_path)){
@@ -146,12 +161,12 @@ if (!is.null(glowgenes_path)){
 #===========#
 # AF filtering
 print(nrow(vep))
-vep$gnomADe_AF_popmax = as.numeric(unlist(lapply(vep$gnomADe_AF_popmax, function(x) strsplit(x, ",")[[1]][1])))
-vep$gnomADg_AF_popmax = as.numeric(unlist(lapply(vep$gnomADg_AF_popmax, function(x) strsplit(x, ",")[[1]][1])))
+vep$gnomADe_AF_grpmax = as.numeric(unlist(lapply(vep$gnomADe_AF_grpmax, function(x) strsplit(x, ",")[[1]][1])))
+vep$gnomADg_AF_grpmax = as.numeric(unlist(lapply(vep$gnomADg_AF_grpmax, function(x) strsplit(x, ",")[[1]][1])))
 
-vep = vep[is.na(vep$gnomADe_AF_popmax) | as.numeric(vep$gnomADe_AF_popmax) < as.numeric(maf) | vep$gnomADe_filt != "PASS",]
+vep = vep[is.na(vep$gnomADe_AF_grpmax) | as.numeric(vep$gnomADe_AF_grpmax) < as.numeric(maf) | vep$gnomADe_filt != "PASS",]
 print(nrow(vep))
-vep = vep[is.na(vep$gnomADg_AF_popmax) | as.numeric(vep$gnomADg_AF_popmax) < as.numeric(maf) | vep$gnomADg_filt != "PASS",]
+vep = vep[is.na(vep$gnomADg_AF_grpmax) | as.numeric(vep$gnomADg_AF_grpmax) < as.numeric(maf) | vep$gnomADg_filt != "PASS",]
 print(nrow(vep))
 
 # Gene Filter
@@ -325,8 +340,8 @@ df_out$HGVSp = vep$HGVSp
 df_out$DISTANCE = as.numeric(vep$DISTANCE)
 df_out$STRAND = vep$STRAND
 df_out$Interpro_domain = vep$Interpro_domain
-
-
+df_out$Interpro_domain = vep$Interpro_domain
+df_out$Domino_Score = vep$Domino_Score
 
 
 #===============#
@@ -337,6 +352,7 @@ print("Pathogenicity")
 df_out$CLNSIG = vep$ClinVar_CLNSIG
 df_out$CLNREVSTAT = vep$ClinVar_CLNREVSTAT
 df_out$CLNDN = vep$ClinVar_CLNDN
+df_out$CLNSIGCONF = vep$ClinVar_CLNSIGCONF                                                                      
 df_out$OMIM_phenotype = vep$Phenotypes
 df_out$Orphanet_disorder = vep$Orphanet_disorder
 df_out$Orphanet_association_type = vep$Orphanet_association_type
@@ -359,9 +375,9 @@ df_out$gnomADg_nhomalt = as.numeric(unlist(lapply(vep$gnomADg_nhomalt, function(
 df_out$gnomADg_cov_median = round(unlist(lapply(vep$gnomADg_cov_median, function(x) mean(as.numeric(strsplit(gsub("(?<![eE])-","0",x, perl = T), ",")[[1]])))))
 df_out$gnomADg_cov_perc_20x = round(unlist(lapply(vep$gnomADg_cov_perc_20x, function(x) mean(as.numeric(strsplit(gsub("(?<![eE])-","0",x, perl = T), ",")[[1]])))),2)
 df_out$gnomADg_filter = vep$gnomADg_filt
-df_out$gnomADg_popmax = vep$gnomADg_popmax
-df_out$gnomADg_AF_popmax = vep$gnomADg_AF_popmax
-df_out$gnomADg_AC_popmax = as.numeric(unlist(lapply(vep$gnomADg_AC_popmax, function(x) strsplit(x, ",")[[1]][1])))
+df_out$gnomADg_popmax = vep$gnomADg_grpmax
+df_out$gnomADg_AF_popmax = vep$gnomADg_AF_grpmax
+df_out$gnomADg_AC_popmax = as.numeric(unlist(lapply(vep$gnomADg_AC_grpmax, function(x) strsplit(x, ",")[[1]][1])))
 df_out$gnomADg_AF_nfe = as.numeric(unlist(lapply(vep$gnomADg_AF_nfe, function(x) strsplit(x, ",")[[1]][1])))
 df_out$gnomADg_AC_nfe = as.numeric(unlist(lapply(vep$gnomADg_AC_nfe, function(x) strsplit(x, ",")[[1]][1])))
 
@@ -372,9 +388,9 @@ df_out$gnomADe_nhomalt = as.numeric(unlist(lapply(vep$gnomADe_nhomalt, function(
 df_out$gnomADe_cov_median = round(unlist(lapply(vep$gnomADe_cov_median, function(x) mean(as.numeric(strsplit(gsub("(?<![eE])-","0",x, perl = T), ",")[[1]])))))
 df_out$gnomADe_cov_perc_20x = round(unlist(lapply(vep$gnomADe_cov_perc_20x, function(x) mean(as.numeric(strsplit(gsub("(?<![eE])-","0",x, perl = T), ",")[[1]])))),2)
 df_out$gnomADe_filter = vep$gnomADe_filt
-df_out$gnomADe_popmax = vep$gnomADe_popmax
-df_out$gnomADe_AF_popmax = vep$gnomADe_AF_popmax
-df_out$gnomADe_AC_popmax = as.numeric(unlist(lapply(vep$gnomADe_AC_popmax, function(x) strsplit(x, ",")[[1]][1])))
+df_out$gnomADe_popmax = vep$gnomADe_grpmax
+df_out$gnomADe_AF_popmax = vep$gnomADe_AF_grpmax
+df_out$gnomADe_AC_popmax = as.numeric(unlist(lapply(vep$gnomADe_AC_grpmax, function(x) strsplit(x, ",")[[1]][1])))
 df_out$gnomADe_AF_nfe = as.numeric(unlist(lapply(vep$gnomADe_AF_nfe, function(x) strsplit(x, ",")[[1]][1])))
 df_out$gnomADe_AC_nfe = as.numeric(unlist(lapply(vep$gnomADe_AC_nfe, function(x) strsplit(x, ",")[[1]][1])))
 
@@ -384,6 +400,12 @@ df_out$CSVS_AF = as.numeric(unlist(lapply(vep$CSVS_AF, function(x) strsplit(x, "
 df_out$CSVS_AC = as.numeric(unlist(lapply(vep$CSVS_AC, function(x) strsplit(x, ",")[[1]][1])))
 df_out$FJD_MAF_AF = as.numeric(unlist(lapply(vep$FJD_MAF_AF, function(x) strsplit(x, ",")[[1]][1])))
 df_out$FJD_MAF_AC = as.numeric(unlist(lapply(vep$FJD_MAF_AC, function(x) strsplit(x, ",")[[1]][1])))
+##add new columns del MAF_FJD de DHR vs pseudocontroles (SON DE OJO LOS PSEUDOCONTROLES)
+df_out$FJD_MAF_AF_DS_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AF_DS_irdt, function(x) strsplit(x, ",")[[1]][1])))
+df_out$FJD_MAF_AC_DS_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AC_DS_irdt, function(x) strsplit(x, ",")[[1]][1])))
+df_out$FJD_MAF_AF_P_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AF_P_eyeg, function(x) strsplit(x, ",")[[1]][1])))
+df_out$FJD_MAF_AC_P_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AC_P_eyeg, function(x) strsplit(x, ",")[[1]][1])))
+                                             
 df_out$denovoVariants_SAMPLE_CT = vep$denovoVariants_SAMPLE_CT
 
 
@@ -398,6 +420,7 @@ print("Pathogenicity prediction")
 df_out$CADD_PHRED = as.numeric(vep$CADD_PHRED)
 df_out$CADD_RAW = as.numeric(vep$CADD_RAW)
 df_out$MutScore = as.numeric(vep$Mut_Score)
+df_out$REVELScore = as.numeric(vep$REVEL_Score)
 
 patho_norm_func = function(predictions){
   predictions = gsub(";", ",", predictions)
@@ -479,6 +502,7 @@ df_out$SpliceAI_DS_AG = as.numeric(SpliceAI$DS_AG)
 df_out$SpliceAI_DS_AL = as.numeric(SpliceAI$DS_AL)
 df_out$SpliceAI_DS_DG = as.numeric(SpliceAI$DS_DG)
 df_out$SpliceAI_DS_DL = as.numeric(SpliceAI$DS_DL)
+df_out$SpliceAI_DS_Max = apply(df_out[c("SpliceAI_DS_AG", "SpliceAI_DS_AL", "SpliceAI_DS_DG", "SpliceAI_DS_DL")], 1, max)                           
 df_out$SpliceAI_DP_AG = as.numeric(SpliceAI$DP_AG)
 df_out$SpliceAI_DP_AL = as.numeric(SpliceAI$DP_AL)
 df_out$SpliceAI_DP_DG = as.numeric(SpliceAI$DP_DG)
@@ -500,10 +524,11 @@ df_out$MaxEntScan_ref = as.numeric(vep$MaxEntScan_ref)
 print("Conservation and phylogeny")
 
 df_out$LoFtool = as.numeric(vep$LoFtool)
-df_out$ExACpLI = as.numeric(vep$ExACpLI)
+#antiguo "ExACpLI ahora es pLI_gene_value
+df_out$ExACpLI = as.numeric(vep$pLI_gene_value)
 df_out$gnomAD_exomes_CCR = vep$gnomAD_exomes_CCR
-df_out$phastCons30way_mammalian = as.numeric(vep$phastCons30way_mammalian)
-df_out$phyloP30way_mammalian = as.numeric(vep$phyloP30way_mammalian)
+df_out$phastCons30way_mammalian = as.numeric(vep$phastCons470way_mammalian)
+df_out$phyloP30way_mammalian = as.numeric(vep$phyloP470way_mammalian)
 df_out$MGI_mouse_phenotype = vep$MGI_mouse_phenotype_filt
 
 
@@ -513,10 +538,10 @@ df_out$MGI_mouse_phenotype = vep$MGI_mouse_phenotype_filt
 #=====================================================#
 #Expression, process, route, function and interaction #
 #=====================================================#
-print("Conservation and phylogeny")
+print("Expression, process, route, function and interaction")
 
-df_out$GTEx_V8_gene = vep$GTEx_V8_gene
-df_out$GTEx_V8_tissue = vep$GTEx_V8_tissue
+df_out$GTEx_V8_gene = vep$GTEx_V8_eQTL_gene
+df_out$GTEx_V8_tissue = vep$GTEx_V8_eQTL_tissue
 df_out$`Expression_GNF-Atlas` = vep$Expression.GNF.Atlas.
 df_out$Pathway_KEGG = vep$Pathway.KEGG._full
 df_out$GO_biological_process = vep$GO_biological_process
@@ -524,7 +549,21 @@ df_out$GO_cellular_component = vep$GO_cellular_component
 df_out$GO_molecular_function = vep$GO_molecular_function
 df_out$Interactions_IntAct = vep$Interactions.IntAct.
 
-
+df_out$retina_RNA_tissue_consensus = round(vep$retina,2)
+df_out$testis_RNA_tissue_consensus = round(vep$testis,2)
+df_out$kidney_RNA_tissue_consensus = round(vep$kidney,2)
+df_out$brain_max_RNA_tissue_consensus = round(vep$brain_max,2)
+df_out$glands_max_RNA_tissue_consensus = round(vep$glands_max,2)
+df_out$digestive_max_RNA_tissue_consensus = round(vep$digestive_max,2)
+df_out$heart_RNA_tissue_consensus = round(vep$heart.muscle,2)
+df_out$liver_RNA_tissue_consensus = round(vep$liver,2)
+df_out$lung_RNA_tissue_consensus = round(vep$lung,2)
+df_out$pancreas_RNA_tissue_consensus = round(vep$pancreas,2)
+df_out$skel_muscle_RNA_tissue_consensus = round(vep$skeletal.muscle,2)
+df_out$skin_RNA_tissue_consensus = round(vep$skin,2)
+df_out$mean_expression_RNA_tissue_consensus = round(vep$mean_exp,2)
+df_out$retina_ratio_exp_RNA_tissue_consensus = round(vep$retina_ratio, 2)
+                           
 df_out$Original_pos = vep$SAMPLE_Original_pos
 df_out$variant_id = vep$SAMPLE_variant_id
 
