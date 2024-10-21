@@ -2792,6 +2792,7 @@ process PVM {
 		path omim 
 		path regiondict 
 		path domino 
+		path gene_panels
 		path tissue_expression
 		val maf 
 		path genefilter 
@@ -2810,6 +2811,7 @@ process PVM {
 		def omim_field       = omim       ? "--omim ${omim} " : ''
 		def genefilter_field = genefilter ? "--genefilter ${genefilter} " : ''
 		def glowgenes_field  = glowgenes  ? "--glowgenes ${glowgenes} " : ''
+		def gene_panels_field  = gene_panels  ? "--panels ${gene_panels} " : ''
 
 		"""
 		header_row="\$(head -n 1000 ${vep_tsv} | grep "#Uploaded_variation" -n | sed 's/:.*//')"
@@ -2826,7 +2828,8 @@ process PVM {
 		--maf ${maf} \\
 		${omim_field}\\
 		${genefilter_field}\\
-		${glowgenes_field}
+		${glowgenes_field}\\
+		${gene_panels_field}
 		"""
 }
 
