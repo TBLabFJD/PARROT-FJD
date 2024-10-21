@@ -2828,6 +2828,7 @@ process PVM {
 		--maf ${maf} \\
 		${omim_field}\\
 		${genefilter_field}\\
+		${glowgenes_field}\\
 		${gene_panels_field}
 		"""
 }
