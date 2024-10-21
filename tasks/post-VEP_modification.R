@@ -47,7 +47,10 @@ option_list = list(
               help="\t\tGene list to filter the resutls", metavar="character"),
   
   make_option(c("-w", "--glowgenes"), type="character", default=NULL,
-              help="\t\tGLOWgenes output file to annotate and srt the results", metavar="character")
+              help="\t\tGLOWgenes output file to annotate and srt the results", metavar="character"),
+  
+  make_option(c("-p", "--panels"), type="character", default=NULL,
+              help="\t\tGene-Panel file to annotate", metavar="character")
  )
 
 opt_parser = OptionParser(option_list=option_list)
@@ -66,6 +69,7 @@ automap_path = opt$automap
 maf = opt$maf
 genefilter_path = opt$genefilter
 glowgenes_path = opt$glowgenes
+panels_path = opt$panels
 
 # 
 # input = "/home/gonzalo/tblab/mnt/genetica4/gonzalo/trio_externo_12oct/trio.annotated.1.tsv"
@@ -117,6 +121,13 @@ if (!is.null(omim_path)){
   colnames(omim) = c("Chromosome", "Genomic_Position_Start", "Genomic Position End", "Cyto_Location", "Computed_Cyto_Location", "MIM_Number",
     "Gene_Symbols", "Gene_Name",	"Approved_Gene_Symbol", "Entrez_Gene_ID", "Ensembl_Gene_ID", "Comments", "Phenotypes", "Mouse_Gene_Symbol-ID")
   vep = merge(vep, omim, by.x = "SYMBOL", by.y = "Approved_Gene_Symbol", all.x = T)
+}
+
+
+# Gene-Panel 
+if (!is.null(panels_path)){
+  gene_panel = read.delim(panels_path, header = TRUE, stringsAsFactors = F, quote = "")
+  vep = merge(vep, gene_panel, by.x = "SYMBOL", by.y = "gene", all.x = T)
 }
 
 
@@ -206,7 +217,7 @@ df_out$Gene_full_name = vep$Gene_full_name
 if (!is.null(glowgenes_path)) df_out$GLOWgenes = vep$GLOWgenes
 if ((!is.null(genefilter_path)) & (!is.null(glowgenes_path))) df_out$GLOWgenes[df_out$SYMBOL %in% genefilter$V1] = 0 # We assume the genes of the list are the genes from the panel
 df_out$VARIANT_CLASS = vep$VARIANT_CLASS
-
+df_out$Panels_name = vep$panels
 
 
 
