@@ -95,7 +95,9 @@ include { LOCALVCF } from './modules/execution_modules'
 include { FORMAT2INFO } from './modules/execution_modules'
 include { AUTOMAP } from './modules/execution_modules'
 include { VEP } from './modules/execution_modules'
+include { SPLIT_VEP_TSV } from './modules/execution_modules'
 include { PVM } from './modules/execution_modules'
+include { MERGE_PVM_TSV } from './modules/execution_modules'
 
 include { MOSDEPTH } from './modules/execution_modules'
 //include { MOSDEPTH_JOIN as MOSDEPTH_JOIN_SNV } from './modules/execution_modules'
@@ -975,10 +977,26 @@ workflow ANNOTATION {
 			final_vcf.join(FORMAT2INFO.out.sample_info),
 			params.assembly )
 
+		SPLIT_VEP_TSV (
+			final_vcf.join(VEP.out.vep_tsv)
 
+		)
 
+		//SPLIT_VEP_TSV.out.split_tsv.flatMap { id, files -> files.collect { file -> [id, file] }}.view()
+
+		//SPLIT_VEP_TSV.out.split_tsv.view()
+		//SPLIT_VEP_TSV.out.split_tsv.join(AUTOMAP.out.roh_automap).
+		//flatMap { id, files, automap -> files.collect { file -> [id, file, automap] }}.view()
+
+		pvm_files = SPLIT_VEP_TSV.out.split_tsv.join(AUTOMAP.out.roh_automap)
+		.flatMap { id, files, automap ->
+			files instanceof Collection ? files.collect { file -> [file.getBaseName(), file, automap] } : [[id, files, automap]]
+		}
+		//.view()
+		pvm_files.view()
 		PVM(
-			VEP.out.vep_tsv.join(AUTOMAP.out.roh_automap),
+			//VEP.out.vep_tsv.join(AUTOMAP.out.roh_automap),
+			pvm_files,
 			params.dbNSFP_gene,
 			params.omim,
 			params.regiondict,
@@ -991,10 +1009,28 @@ workflow ANNOTATION {
 			params.assembly,
 			projectDir )
 
+		//PVM.out.pvm_tsv.map {id, tsv -> [id.split('_')[0], tsv]}.groupTuple().view()
+
+
+		PVM.out.pvm_tsv.view()
+
+		PVM.out.pvm_tsv.map {id, tsv -> [id.split('_')[0], tsv]}.groupTuple()
+        .branch {
+            multiple: it[1].size() > 1
+            single: it[1].size() == 1
+        }
+        .set { branched_ch }  // YBQ: si hay más de un archivo (se ha hecho el split), se guarda en multiple. Si solo hay uno, se guarda en single. 
+
+		branched_ch.multiple.view()
+
+		MERGE_PVM_TSV(
+			//PVM.out.pvm_tsv.map {id, tsv -> [id.split('_')[0], tsv]}.groupTuple(),
+			branched_ch.multiple, // YBQ: si branched_ch.multiple está vacío, no se hace el merge
+			params.assembly
+		)
+
 
 	// emit:
-
-
 }
 
 
