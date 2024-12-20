@@ -2771,12 +2771,70 @@ phyloP470way_mammalian,phastCons470way_mammalian,GERP++_RS,Interpro_domain,GTEx_
 }
 
 
+// YBQ: si el vcf es más grande de 100M, lo dividimos en trozos (de aprox 100M)
 
+process SPLIT_VEP_TSV {
+	
+	input:
+		tuple val(sample), path(final_vcf), path(vep_tsv)
 
+	output:
+		tuple \
+			val(sample), path("split_tsv/*"), emit: split_tsv
+		
+	script:
 
+		"""
+		#max_size=\$((100 * 1024 * 1024)) # 100 MB in bytes
+		max_size=\$((80 * 1024 * 1024)) # 80 MB in bytes
+		#max_size=\$((341047/2)) 
+		# Check the size of the VCF file
+		vcf_size=${final_vcf.size()}
 
+		# Calculate the number of chunks
+		num_chunks=\$(( (\${vcf_size} + \${max_size} - 1) / \${max_size} ))
 
+		if (( \${num_chunks} <= 1 )); then
+			echo "The VCF file is less than 100MB. No splitting needed."
+			# Prepare output directory
+			output_dir="./split_tsv"
+			mkdir -p \${output_dir}
 
+			mv ${vep_tsv} "\${output_dir}/${sample}_chunk_00.tsv" 
+
+			exit 0
+		fi
+
+		echo "VCF file is \$((\${vcf_size} / 1024 / 1024))MB. Splitting into \${num_chunks} parts."
+
+		# Prepare output directory
+		output_dir="./split_tsv"
+		mkdir -p \${output_dir}
+
+		# Extract the header from the TSV file
+		header=\$(grep '^#' ${vep_tsv})
+
+		# Calculate the number of non-header lines per chunk
+		total_lines=\$(grep -vc '^#' ${vep_tsv})
+		lines_per_chunk=\$(( (\${total_lines} + \${num_chunks} - 1) / \${num_chunks} + 10 ))
+
+		echo \${lines_per_chunk}
+
+		# Split the TSV file
+		chunk=1
+
+		grep -v '^#' ${vep_tsv} | split -l \${lines_per_chunk} - "\${output_dir}/${sample}_temp_chunk_"
+
+		for temp_file in \${output_dir}/${sample}_temp_chunk_*; do
+			current_file="\${output_dir}/${sample}_chunk-\$(printf '%03d' \${chunk}).tsv"
+			echo "\${header}" > "\${current_file}"
+			cat \${temp_file} >> \${current_file}
+			chunk=\$((\${chunk} + 1))
+			rm \${temp_file}
+		done
+
+		"""
+}
 
 
 
@@ -2801,11 +2859,19 @@ process PVM {
 		path projectDir
 
 	output:
+		//tuple \
+		//	val(sample), \
+		//	path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv"), \
+		//	path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv.xlsx"), emit: pvm_tsv 
+	
 		tuple \
 			val(sample), \
-			path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv"), \
-			path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv.xlsx"), emit: pvm_tsv 
-	
+			path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv"), emit: pvm_tsv 
+		
+		tuple \
+			val(sample), \
+			path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv.xlsx"), emit: pvm_xlsx
+
 	script:
 	
 		def omim_field       = omim       ? "--omim ${omim} " : ''
@@ -2834,7 +2900,32 @@ process PVM {
 }
 
 
+process MERGE_PVM_TSV {
 
+	publishDir "${params.output}/snvs/", mode: 'copy'
+	
+	input:
+		tuple val(sample), path(pvm_tsvs)
+		val assembly
+
+	output:
+		
+		tuple \
+			val(sample), path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv"), emit: annotated_tsv
+
+		
+	script:
+		"""
+		header=\$(head -1 ${pvm_tsvs[0]})
+
+		echo "\$header" > "${sample}.${assembly}.SNV.INDEL.annotated.final.tsv"
+
+		for tsv in ${pvm_tsvs}; do
+			tail -n +2 \${tsv} >> "${sample}.${assembly}.SNV.INDEL.annotated.final.tsv"
+		done
+
+		"""
+}
 
 
 
