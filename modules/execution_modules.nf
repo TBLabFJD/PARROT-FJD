@@ -2595,7 +2595,9 @@ process FORMAT2INFO {
 process AUTOMAP {
 	label "bioinfotools"
 	publishDir "${params.output}/automap/", mode: 'copy'
-	errorStrategy 'retry'
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
+
 	
 	input:
 		tuple val(sample), path(final_vcf)
