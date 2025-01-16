@@ -2569,8 +2569,19 @@ process FORMAT2INFO {
 		bcftools query -f "variant_id=%CHROM\\_%POS\\_%REF\\_%ALT;Original_pos=%POS;\${newfields}\\n" -u ${final_vcf} | sed 's/;//2' | sed 's/,/_/g' > new_info.txt
 		# bcftools query -f 'variant_id=%CHROM\\_%POS\\_%REF\\_%ALT;Original_pos=%POS;[;%SAMPLE\\_GT=%GT][;%SAMPLE\\_AD=%AD][;%SAMPLE\\_DP=%DP][;%SAMPLE\\_GQ=%GQ]\\n' -u ${final_vcf} | sed 's/;//2' | sed 's/,/_/g' > new_info.txt
 		bcftools view -H ${final_vcf} | cut -f1-8 > old_info.txt
-		paste -d ';' old_info.txt new_info.txt >> ${sample}.vcf_to_annotate.vcf
-		
+		#paste -d ';' old_info.txt new_info.txt >> ${sample}.vcf_to_annotate.vcf
+		#el comando original es el de paste pero como el comando esta dentro del container de bioinfotools y no lo estoy cargandoi pues no vaentonces cambio a awk
+		# cuando corri la anoacion corri una cosa que no era del paste exacta
+		# he usado ahora algo mas parecido al paste de antes porque supuestamente los missing fields no se estaban poniendo, lo he probado en local
+		awk '{
+		    if ((getline line < "new_info.txt") > 0) {
+		        print $0 ";" line;
+		    } else {
+		        print $0 ";";
+		    }
+		}' old_info.txt >> ${sample}.vcf_to_annotate.vcf
+
+
 		bgzip ${sample}.vcf_to_annotate.vcf
 		tabix -p vcf ${sample}.vcf_to_annotate.vcf.gz
 
