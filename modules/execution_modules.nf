@@ -2522,6 +2522,7 @@ process LOCALVCF {
 
 process FORMAT2INFO {
 
+
     // Conda is not supported
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
 	'https://depot.galaxyproject.org/singularity/bcftools:1.10--h5d15f04_0':
