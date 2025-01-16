@@ -2488,8 +2488,10 @@ process MERGE_VCF_CALLERS {
 
 
 process LOCALVCF {	
-	label "bioinfotools"
-
+	    // Conda is not supported
+    	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+		'https://depot.galaxyproject.org/singularity/bcftools:1.10--h5d15f04_0':
+		'biocontainers/bcftools:1.10--h5d15f04_0' }"
 	input:
 		path inputdir
 		path ref
