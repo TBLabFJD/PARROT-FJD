@@ -2575,12 +2575,12 @@ process FORMAT2INFO {
 		# he usado ahora algo mas parecido al paste de antes porque supuestamente los missing fields no se estaban poniendo, lo he probado en local
 
 		    awk '{
-			if ((getline line < "${new_info}") > 0) {
+			if ((getline line < "new_info.txt") > 0) {
 			    print \$0 ";" line;
 			} else {
 			    print \$0 ";";
 			}
-		    }' ${old_info} >> ${sample}.vcf_to_annotate.vcf
+		    }' old_info.txt >> ${sample}.vcf_to_annotate.vcf
 
 
 		bgzip ${sample}.vcf_to_annotate.vcf
