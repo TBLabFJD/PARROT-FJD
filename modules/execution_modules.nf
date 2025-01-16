@@ -2573,13 +2573,14 @@ process FORMAT2INFO {
 		#el comando original es el de paste pero como el comando esta dentro del container de bioinfotools y no lo estoy cargandoi pues no vaentonces cambio a awk
 		# cuando corri la anoacion corri una cosa que no era del paste exacta
 		# he usado ahora algo mas parecido al paste de antes porque supuestamente los missing fields no se estaban poniendo, lo he probado en local
-		awk '{
-		    if ((getline line < "new_info.txt") > 0) {
-		        print $0 ";" line;
-		    } else {
-		        print $0 ";";
-		    }
-		}' old_info.txt >> ${sample}.vcf_to_annotate.vcf
+
+		    awk '{
+			if ((getline line < "${new_info}") > 0) {
+			    print \$0 ";" line;
+			} else {
+			    print \$0 ";";
+			}
+		    }' ${old_info} >> ${sample}.vcf_to_annotate.vcf
 
 
 		bgzip ${sample}.vcf_to_annotate.vcf
