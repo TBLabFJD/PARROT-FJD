@@ -134,6 +134,13 @@ include { GERMLINECNVCALLER } from './modules/execution_modules'
 include { POSTPROCESSGERMLINECNVCALLS } from './modules/execution_modules'
 include { VCF2BED } from './modules/execution_modules'
 
+//// módulos para el análisis de snvs en chrM:
+
+include { PRINTREADS_CHRM } from './modules/execution_modules'
+include { REVERTSAM } from './modules/execution_modules'
+include { SAMTOFASTQ } from './modules/execution_modules'
+include { BWA_CHRM } from './modules/execution_modules'
+include { BWA_CHRM as BWA_CHRM_SHIFTED} from './modules/execution_modules'
 
 
 // def final_vcf  = Channel.fromPath(params.final_vcf)
@@ -263,7 +270,7 @@ workflow CHECK_PARAMS {
 		// m = params.analysis.toUpperCase() =~ /[DMQSGCXAN]/
 		// assert m instanceof Matcher
 		// if ( !m ) {exit 1, "Error: Cannot recognice the any of the specified analisis analysis.\nThe available analysis are: D (Download from BaseSpace), M (Mapping), S (SNV individual), G (SNV GVCF),\nA (SNV annotation), C (CNV calling), N (CNV annotation), X (chrX CNV calling)\n"}
-		if ( !(params.analysis.toUpperCase() =~ /[DMQSGCXAN]/) ) {exit 1, "Error: Cannot recognice the any of the specified analisis analysis.\nThe available analysis are: D (Download from BaseSpace), M (Mapping), S (SNV individual), G (SNV GVCF),\nA (SNV annotation), C (CNV calling), N (CNV annotation), X (chrX CNV calling)\n"}
+		if ( !(params.analysis.toUpperCase() =~ /[DMQSGCXANT]/) ) {exit 1, "Error: Cannot recognice the any of the specified analisis analysis.\nThe available analysis are: D (Download from BaseSpace), M (Mapping), S (SNV individual), G (SNV GVCF),\nA (SNV annotation), C (CNV calling), N (CNV annotation), X (chrX CNV calling), T (chrM SNVs)\n"}
 		println "Analysis type check"
 
 
@@ -1034,10 +1041,61 @@ workflow ANNOTATION {
 }
 
 
+/////// YBQ:WORKFLOW para snvs e indels del ADN mitocondrial ////
 
+workflow SNVS_MITOCHONDRIA {
+	take:
+		bam
+		ref_chrM_fasta
+		ref_chrM_fasta_fai
+		ref_chrM_shifted_fasta
+		ref_chrM_dict
+		//ref_chrM_gzi
+		chrM_index
+		chrM_shifted_index
 
+	main:
+		PRINTREADS_CHRM (
+			bam,
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict,
+			//ref_chrM_gzi
+		)
 
+		REVERTSAM (
+			PRINTREADS_CHRM.out.bam
+		)
 
+		//REVERTSAM.out.bam.view()
+
+		SAMTOFASTQ (
+			REVERTSAM.out.bam
+		)
+
+		SAMTOFASTQ.out.fastq.view()
+
+		BWA_CHRM (
+			SAMTOFASTQ.out.fastq,
+			'chrM',
+			file(chrM_index),
+			ref_chrM_fasta
+		)
+
+		BWA_CHRM_SHIFTED (
+			SAMTOFASTQ.out.fastq,
+			'chrM_shifted',
+			file(chrM_shifted_index),
+			ref_chrM_shifted_fasta
+
+		)
+
+		BWA_CHRM.out.mapped_bam
+		BWA_CHRM_SHIFTED.out.mapped_bam
+
+}
+
+////////////////////////////
 
 workflow CNVCALLING {
 	take:
@@ -1620,7 +1678,7 @@ workflow {
 	}  
 
 
-	if ( params.analysis.toUpperCase() =~ /[QSGCX]/ ){
+	if ( params.analysis.toUpperCase() =~ /[QSGCXT]/ ){
 		
 		if ( params.analysis.toUpperCase().contains("M") ) {
 					
@@ -1857,7 +1915,19 @@ workflow {
 	}
 
 
-
+	if ( params.analysis.toUpperCase().contains("T") ) {
+		//bam.view()
+		SNVS_MITOCHONDRIA(
+			bam,
+			params.ref_chrM_fasta,
+			params.ref_chrM_fasta_index,
+			params.ref_chrM_shifted_fasta, 
+			params.dict_chrM,
+			//params.gzi_chrM,
+			params.bwa_index_chrM, 
+			params.bwa_index_chrM_shifted
+			)
+	} 
 
 
 // yoli:EN LAS CNVS AÚN NO HEMOS AUTOMATIZADO EL PARALLEL MAPPING. 

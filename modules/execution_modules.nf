@@ -301,6 +301,7 @@ process LOCAL_CHECK {
 		else if ( analysis.contains("S") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("G") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("C") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("T") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("X") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("A") ) { extension_local_check = "(.vcf|.vcf.gz)" }
 		else if ( analysis.contains("N") ) { extension_local_check = "(.tsv|.bed)" }
@@ -3997,3 +3998,140 @@ process VCF2BED {
 		done
 		"""
 }
+
+
+// YBQ: Añadimos el análisis del ADN mitocondrial. 
+
+
+process PRINTREADS_CHRM {
+	label "gatk"
+
+	input:
+		tuple val(sample), path(bam), path(bai)
+		path ref_fasta
+		path ref_fai
+		path dict
+		//path gzi
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.chrM.bam"), \
+			path("${sample}.chrM.bai"), emit: bam
+
+	script:
+		"""
+		gatk PrintReads \
+			-R ${ref_fasta} \
+			-L chrM \
+			--read-filter MateOnSameContigOrNoMappedMateReadFilter \
+			--read-filter MateUnmappedAndUnmappedReadFilter \
+			-I ${bam} \
+			--read-index ${bai} \
+			-O ${sample}.chrM.bam
+		"""
+}
+
+
+process REVERTSAM {
+	label "gatk"
+
+	input:
+		tuple val(sample), path(bam), path(bai)
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.chrM.unmapped.bam"), emit: bam
+
+	script:
+		"""
+		gatk RevertSam \
+			INPUT=${bam} \
+			OUTPUT=${sample}.chrM.unmapped.bam \
+			OUTPUT_BY_READGROUP=false \
+			VALIDATION_STRINGENCY=LENIENT \
+			ATTRIBUTE_TO_CLEAR=FT \
+			ATTRIBUTE_TO_CLEAR=CO \
+			SORT_ORDER=queryname \
+			RESTORE_ORIGINAL_QUALITIES=false
+		"""
+}
+
+
+process SAMTOFASTQ {
+	label "gatk"
+
+	input:
+		tuple val(sample), path(bam)
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}_R1.chrM.fastq"), \
+			path("${sample}_R2.chrM.fastq"), emit: fastq
+
+	script:
+		"""
+		gatk SamToFastq \
+			INPUT=${bam} \
+			FASTQ=${sample}_R1.chrM.fastq \
+			SECOND_END_FASTQ=${sample}_R2.chrM.fastq \
+			NON_PF=true
+		"""
+}
+
+
+
+process BWA_CHRM {
+	label "bwa"
+	label "highcpu"
+	label "highmem"
+
+	input:
+		tuple val(sample), path(forward), path(reverse)
+		val ref_name
+		path index
+		path ref
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.${ref_name}.mapped.bam"), emit: mapped_bam
+
+	script:
+		// sample  = fastq[0]
+		// forward = fastq[1]
+		// reverse = fastq[2]
+		"""
+		bwa mem \\
+		${ref} \\
+		${forward} \\
+		${reverse} > ${sample}.${ref_name}.mapped.bam
+
+		"""
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
