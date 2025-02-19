@@ -141,6 +141,25 @@ include { REVERTSAM } from './modules/execution_modules'
 include { SAMTOFASTQ } from './modules/execution_modules'
 include { BWA_CHRM } from './modules/execution_modules'
 include { BWA_CHRM as BWA_CHRM_SHIFTED} from './modules/execution_modules'
+include { MERGEBAMALIGNMENT_CHRM } from './modules/execution_modules'
+include { MERGEBAMALIGNMENT_CHRM as MERGEBAMALIGNMENT_CHRM_SHIFTED} from './modules/execution_modules'
+include { MARKDUPLICATES_CHRM } from './modules/execution_modules'
+include { MARKDUPLICATES_CHRM as MARKDUPLICATES_CHRM_SHIFTED } from './modules/execution_modules'
+include { SORTSAM_CHRM	} from './modules/execution_modules'
+include { SORTSAM_CHRM as SORTSAM_CHRM_SHIFTED } from './modules/execution_modules'
+include { COLLECTWGSMETRICTS	} from './modules/execution_modules'
+include { GATK4_MUTECT2			} from './modules/execution_modules'
+include { GATK4_MUTECT2	as GATK4_MUTECT2_SHIFTED		} from './modules/execution_modules'
+include { LIFTOVER_CHRM			} from './modules/execution_modules'
+include { MERGE_VCFS_CHRM			} from './modules/execution_modules'
+include { MERGE_MUTECT_STATS			} from './modules/execution_modules'
+include { FILTER_MUTECT_CALLS			} from './modules/execution_modules'
+include { FILTER_MUTECT_CALLS_CONTAMINATION		} from './modules/execution_modules'
+include { SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES			} from './modules/execution_modules'
+include { HAPLOCHECK			} from './modules/execution_modules'
+include { SPLITMULTIALLELICSSITES_CHR			} from './modules/execution_modules'
+include { VEP_CHRM			} from './modules/execution_modules'
+
 
 
 // def final_vcf  = Channel.fromPath(params.final_vcf)
@@ -1049,10 +1068,13 @@ workflow SNVS_MITOCHONDRIA {
 		ref_chrM_fasta
 		ref_chrM_fasta_fai
 		ref_chrM_shifted_fasta
+		ref_chrM_shifted_fasta_fai
 		ref_chrM_dict
+		ref_chrM_shifted_dict
 		//ref_chrM_gzi
 		chrM_index
 		chrM_shifted_index
+		chrM_shiftback_chain
 
 	main:
 		PRINTREADS_CHRM (
@@ -1073,7 +1095,7 @@ workflow SNVS_MITOCHONDRIA {
 			REVERTSAM.out.bam
 		)
 
-		SAMTOFASTQ.out.fastq.view()
+		//SAMTOFASTQ.out.fastq.view()
 
 		BWA_CHRM (
 			SAMTOFASTQ.out.fastq,
@@ -1089,9 +1111,196 @@ workflow SNVS_MITOCHONDRIA {
 			ref_chrM_shifted_fasta
 
 		)
+		//BWA_CHRM.out.mapped_bam.join(REVERTSAM.out.bam).view()
 
-		BWA_CHRM.out.mapped_bam
-		BWA_CHRM_SHIFTED.out.mapped_bam
+		MERGEBAMALIGNMENT_CHRM (
+			BWA_CHRM.out.mapped_bam.join(REVERTSAM.out.bam),
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict,
+			params.scratch,
+			'chrM'
+		)
+
+		MERGEBAMALIGNMENT_CHRM_SHIFTED (
+			BWA_CHRM_SHIFTED.out.mapped_bam.join(REVERTSAM.out.bam),
+			ref_chrM_shifted_fasta,
+			ref_chrM_shifted_fasta_fai,
+			ref_chrM_shifted_dict,
+			params.scratch,
+			'chrM_shifted'
+		)
+
+		MARKDUPLICATES_CHRM (
+			MERGEBAMALIGNMENT_CHRM.out.merged_bam,
+			params.scratch,
+			'chrM'
+		)
+
+		MARKDUPLICATES_CHRM_SHIFTED (
+			MERGEBAMALIGNMENT_CHRM_SHIFTED.out.merged_bam,
+			params.scratch,
+			'chrM_shifted'
+		)
+
+		SORTSAM_CHRM (
+			MARKDUPLICATES_CHRM.out.deduppedsorted_bam,
+			params.scratch,
+			'chrM'
+		)
+
+		SORTSAM_CHRM_SHIFTED (
+			MARKDUPLICATES_CHRM_SHIFTED.out.deduppedsorted_bam,
+			params.scratch,
+			'chrM_shifted'
+		)
+
+		COLLECTWGSMETRICTS (
+			SORTSAM_CHRM.out.sorted_bam,
+			ref_chrM_fasta
+		)
+
+		GATK4_MUTECT2 (
+			SORTSAM_CHRM.out.sorted_bam,
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict,
+			params.scratch,
+			'chrM', 
+			'chrM:576-16024'
+		)
+
+		GATK4_MUTECT2_SHIFTED (
+			SORTSAM_CHRM_SHIFTED.out.sorted_bam,
+			ref_chrM_shifted_fasta,
+			ref_chrM_shifted_fasta_fai,
+			ref_chrM_shifted_dict,
+			params.scratch,
+			'chrM_shifted',
+			'chrM:8025-9144'
+		)
+
+		LIFTOVER_CHRM (
+			GATK4_MUTECT2_SHIFTED.out.vcf,
+			ref_chrM_fasta,
+			ref_chrM_dict,
+			chrM_shiftback_chain
+		)
+
+		MERGE_VCFS_CHRM (
+			GATK4_MUTECT2.out.vcf,
+			LIFTOVER_CHRM.out.shiftedback_vcf,
+		)
+
+		MERGE_MUTECT_STATS (
+			GATK4_MUTECT2_SHIFTED.out.stats,
+			GATK4_MUTECT2.out.stats
+		)
+
+		MERGE_VCFS_CHRM.out.merged_vcf.map { sample, vcf, idx -> [ sample ] }.view()
+
+		FILTER_MUTECT_CALLS (
+			MERGE_VCFS_CHRM.out.merged_vcf,
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict,
+			MERGE_MUTECT_STATS.out.combined_stats,
+			params.chrM_blacklisted_sites,
+			params.chrM_blacklisted_sites_index
+		)
+
+		SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES (
+			FILTER_MUTECT_CALLS.out.filtered_vcf,
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict
+		)
+
+		HAPLOCHECK (
+			SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES.out.split_pass_vcf
+		)
+
+		HAPLOCHECK.out.hasContamination.view()
+
+		FILTER_MUTECT_CALLS_CONTAMINATION (
+			MERGE_VCFS_CHRM.out.merged_vcf,
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict,
+			MERGE_MUTECT_STATS.out.combined_stats,
+			params.chrM_blacklisted_sites,
+			params.chrM_blacklisted_sites_index,
+			HAPLOCHECK.out.hasContamination,
+			HAPLOCHECK.out.major_level,
+			HAPLOCHECK.out.minor_level
+		)
+
+		SPLITMULTIALLELICSSITES_CHR (
+			FILTER_MUTECT_CALLS_CONTAMINATION.out.contamination_filtered_vcf,
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict
+		)
+
+
+		VEP_CHRM(
+
+			params.dbscSNV,
+			params.dbscSNV_tbi,
+			params.loFtool,
+			params.exACpLI,
+			params.dbNSFP,
+			params.dbNSFP_tbi,
+			params.maxEntScan,
+			params.cADD_INDELS,
+			params.cADD_INDELS_tbi,
+			params.cADD_SNVS,
+			params.cADD_SNVS_tbi,
+			params.kaviar,
+			params.kaviar_tbi,
+			params.cCRS_DB,
+			params.cCRS_DB_tbi,
+			params.dENOVO_DB,
+			params.dENOVO_DB_tbi,
+			params.cLINVAR,
+			params.cLINVAR_tbi,
+			params.gNOMADg,
+			params.gNOMADg_tbi,
+			params.gNOMADe,
+			params.gNOMADe_tbi,
+			params.gNOMADg_cov,
+			params.gNOMADg_cov_tbi,
+			params.gNOMADe_cov,
+			params.gNOMADe_cov_tbi,
+			params.cSVS,
+			params.cSVS_tbi,
+			params.mutScore,
+			params.mutScore_tbi,
+			params.mAF_FJD_COHORT,
+			params.mAF_FJD_COHORT_tbi,
+			params.spliceAI_SNV,
+			params.spliceAI_SNV_tbi,
+			params.spliceAI_INDEL,
+			params.spliceAI_INDEL_tbi,
+			params.REVEL,
+			params.REVEL_tbi,
+			params.vep_cache,
+			params.vep_plugins,
+			params.vep_fasta,
+			params.vep_fai,
+			params.vep_gzi,
+			params.vep_assembly,
+			SPLITMULTIALLELICSSITES_CHR.out.final_chrM_vcf,
+			params.assembly,
+			params.mit_polymorphisms, 
+			params.mit_polymorphisms_tbi,
+			params.mitomap_genomeloci,
+			params.mitomap_genomeloci_tbi
+			
+		)
+		//BWA_CHRM.out.mapped_bam
+		//BWA_CHRM_SHIFTED.out.mapped_bam
+
 
 }
 
@@ -1922,10 +2131,13 @@ workflow {
 			params.ref_chrM_fasta,
 			params.ref_chrM_fasta_index,
 			params.ref_chrM_shifted_fasta, 
+			params.ref_chrM_shifted_fasta_index,
 			params.dict_chrM,
+			params.dict_chrM_shifted,
 			//params.gzi_chrM,
 			params.bwa_index_chrM, 
-			params.bwa_index_chrM_shifted
+			params.bwa_index_chrM_shifted,
+			params.chrM_shiftback_chain
 			)
 	} 
 
