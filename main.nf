@@ -2256,6 +2256,21 @@ workflow {
 				bam_collecteted,
 				bai_collecteted, 
 				CHECK_PARAMS.out.runname )
+
+			// YBQ: si tiene C (CNVs) y G (genoma), y NO tiene H (expansion hunter), comprobar si la opción expansion_hunter=true. Para incluirlo en CNVs (y no tener que poner también analysis H)
+			// ponemos que compruebe que no tiene H porque si tiene H ya habrá hecho el análisis arriba. 
+
+			if ( params.expansion_hunter == true && !params.analysis.toUpperCase().contains("H") ) {
+				
+				STRS (
+					bam,
+					params.reference_fasta,
+					params.reference_index,
+					params.variant_catalog 
+				)
+
+			}
+
 		}
 
 
