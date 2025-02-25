@@ -302,6 +302,7 @@ process LOCAL_CHECK {
 		else if ( analysis.contains("G") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("C") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("T") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("H") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("X") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("A") ) { extension_local_check = "(.vcf|.vcf.gz)" }
 		else if ( analysis.contains("N") ) { extension_local_check = "(.tsv|.bed)" }
@@ -3999,9 +4000,52 @@ process VCF2BED {
 		"""
 }
 
+// ####################################################################
+// ########## YBQ: Añadimos el análisis de STRs ########## 
+// ####################################################################
 
-// YBQ: Añadimos el análisis del ADN mitocondrial. 
+// YBQ: necesitamos que el bai sea sí o sí .bam.bai
 
+process EXPANSIONHUNTER {
+    
+    container "https://depot.galaxyproject.org/singularity/expansionhunter:5.0.0--hf366f20_0"
+	publishDir "${params.output}/strs/", mode: 'copy'
+
+    input:
+    tuple val(sample), path(bam), path(bai)
+    path ref_fasta
+	path ref_fai
+	path(variant_catalog)
+
+    output:
+    tuple val(sample), path("*.vcf.gz")        , emit: vcf
+    tuple val(sample), path("*.json.gz")       , emit: json
+    tuple val(sample), path("*_realigned.bam") , emit: bam
+
+
+    """
+
+	bam_name=\$(basename ${bam} .bam)
+	mv ${bai} \$bam_name.bam.bai
+
+    ExpansionHunter \\
+        --reads ${bam} \\
+        --output-prefix ${sample} \\
+        --reference ${ref_fasta} \\
+        --variant-catalog ${variant_catalog}
+
+    bgzip ${sample}.vcf
+    bgzip ${sample}.json
+    
+	"""
+
+}
+
+
+
+// ####################################################################
+// ########## YBQ: Añadimos el análisis del ADN mitocondrial ########## 
+// ####################################################################
 
 process PRINTREADS_CHRM {
 	label "gatk"
@@ -4883,7 +4927,7 @@ process PVM_CHRM {
 }
 
 
-
+// ####################################################################
 
 
 
