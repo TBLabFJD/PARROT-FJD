@@ -133,6 +133,7 @@ include { DETERMINEGERMLINECONTIGPLOIDY } from './modules/execution_modules'
 include { GERMLINECNVCALLER } from './modules/execution_modules'
 include { POSTPROCESSGERMLINECNVCALLS } from './modules/execution_modules'
 include { VCF2BED } from './modules/execution_modules'
+include { EXPANSIONHUNTER } from './modules/execution_modules'
 
 //// módulos para el análisis de snvs en chrM:
 
@@ -291,7 +292,7 @@ workflow CHECK_PARAMS {
 		// m = params.analysis.toUpperCase() =~ /[DMQSGCXAN]/
 		// assert m instanceof Matcher
 		// if ( !m ) {exit 1, "Error: Cannot recognice the any of the specified analisis analysis.\nThe available analysis are: D (Download from BaseSpace), M (Mapping), S (SNV individual), G (SNV GVCF),\nA (SNV annotation), C (CNV calling), N (CNV annotation), X (chrX CNV calling)\n"}
-		if ( !(params.analysis.toUpperCase() =~ /[DMQSGCXANT]/) ) {exit 1, "Error: Cannot recognice the any of the specified analisis analysis.\nThe available analysis are: D (Download from BaseSpace), M (Mapping), S (SNV individual), G (SNV GVCF),\nA (SNV annotation), C (CNV calling), N (CNV annotation), X (chrX CNV calling), T (chrM SNVs)\n"}
+		if ( !(params.analysis.toUpperCase() =~ /[DMQSGCXANTH]/) ) {exit 1, "Error: Cannot recognice the any of the specified analisis analysis.\nThe available analysis are: D (Download from BaseSpace), M (Mapping), S (SNV individual), G (SNV GVCF),\nA (SNV annotation), C (CNV calling), N (CNV annotation), X (chrX CNV calling), T (chrM SNVs), H (ExpansionHunter)\n"}
 		println "Analysis type check"
 
 
@@ -802,6 +803,8 @@ workflow DEEPVARIANTCALLING {
 	emit:
 		finalvcf = FINAL_DEEPVARIANT.out.vcf
 }
+
+
 
 
 
@@ -1473,11 +1476,25 @@ workflow CNVCALLING {
 }
 
 
+/////// YBQ:WORKFLOW para snvs e indels del ADN mitocondrial ////
 
+workflow STRS {
+	take:
+		bam
+		ref_fasta
+		ref_fasta_fai
+		variant_catalog
 
+	main:
 
+		EXPANSIONHUNTER (
+			bam,
+			ref_fasta,
+			ref_fasta_fai,
+			variant_catalog 
+		)
 
-
+}
 
 
 workflow COMBINEDSNVCALLING {
@@ -1898,7 +1915,7 @@ workflow {
 	}  
 
 
-	if ( params.analysis.toUpperCase() =~ /[QSGCXT]/ ){
+	if ( params.analysis.toUpperCase() =~ /[QSGCXTH]/ ){
 		
 		if ( params.analysis.toUpperCase().contains("M") ) {
 					
@@ -1969,6 +1986,7 @@ workflow {
 				params.padding )
 		
 	}
+
 
 	///keep el cram en una carpeta nueva llamada /cram
 	if ( params.keep_cram == true ) {
@@ -2152,6 +2170,15 @@ workflow {
 			)
 	} 
 
+	if ( params.analysis.toUpperCase().contains("H") ) {
+	//bam.view()
+		STRS (
+			bam,
+			params.reference_fasta,
+			params.reference_index,
+			params.variant_catalog 
+		)
+	} 
 
 // yoli:EN LAS CNVS AÚN NO HEMOS AUTOMATIZADO EL PARALLEL MAPPING. 
 	// CNV calling
@@ -2229,6 +2256,21 @@ workflow {
 				bam_collecteted,
 				bai_collecteted, 
 				CHECK_PARAMS.out.runname )
+
+			// YBQ: si tiene C (CNVs) y G (genoma), y NO tiene H (expansion hunter), comprobar si la opción expansion_hunter=true. Para incluirlo en CNVs (y no tener que poner también analysis H)
+			// ponemos que compruebe que no tiene H porque si tiene H ya habrá hecho el análisis arriba. 
+
+			if ( params.expansion_hunter == true && !params.analysis.toUpperCase().contains("H") ) {
+				
+				STRS (
+					bam,
+					params.reference_fasta,
+					params.reference_index,
+					params.variant_catalog 
+				)
+
+			}
+
 		}
 
 
