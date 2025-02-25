@@ -153,12 +153,14 @@ include { GATK4_MUTECT2	as GATK4_MUTECT2_SHIFTED		} from './modules/execution_mo
 include { LIFTOVER_CHRM			} from './modules/execution_modules'
 include { MERGE_VCFS_CHRM			} from './modules/execution_modules'
 include { MERGE_MUTECT_STATS			} from './modules/execution_modules'
-include { FILTER_MUTECT_CALLS			} from './modules/execution_modules'
+include { FILTER_MUTECT_CALLS_INITIAL			} from './modules/execution_modules'
 include { FILTER_MUTECT_CALLS_CONTAMINATION		} from './modules/execution_modules'
 include { SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES			} from './modules/execution_modules'
 include { HAPLOCHECK			} from './modules/execution_modules'
 include { SPLITMULTIALLELICSSITES_CHR			} from './modules/execution_modules'
+include { FORMAT2INFO_CHRM			} from './modules/execution_modules'
 include { VEP_CHRM			} from './modules/execution_modules'
+include { PVM_CHRM			} from './modules/execution_modules'
 
 
 
@@ -1019,7 +1021,7 @@ workflow ANNOTATION {
 			files instanceof Collection ? files.collect { file -> [file.getBaseName(), file, automap] } : [[id, files, automap]]
 		}
 		//.view()
-		pvm_files.view()
+		//pvm_files.view()
 		PVM(
 			//VEP.out.vep_tsv.join(AUTOMAP.out.roh_automap),
 			pvm_files,
@@ -1038,7 +1040,7 @@ workflow ANNOTATION {
 		//PVM.out.pvm_tsv.map {id, tsv -> [id.split('_')[0], tsv]}.groupTuple().view()
 
 
-		PVM.out.pvm_tsv.view()
+		//PVM.out.pvm_tsv.view()
 
 		PVM.out.pvm_tsv.map {id, tsv -> [id.split('_')[0], tsv]}.groupTuple()
         .branch {
@@ -1047,7 +1049,7 @@ workflow ANNOTATION {
         }
         .set { branched_ch }  // YBQ: si hay más de un archivo (se ha hecho el split), se guarda en multiple. Si solo hay uno, se guarda en single. 
 
-		branched_ch.multiple.view()
+		//branched_ch.multiple.view()
 
 		MERGE_PVM_TSV(
 			//PVM.out.pvm_tsv.map {id, tsv -> [id.split('_')[0], tsv]}.groupTuple(),
@@ -1188,29 +1190,24 @@ workflow SNVS_MITOCHONDRIA {
 		)
 
 		MERGE_VCFS_CHRM (
-			GATK4_MUTECT2.out.vcf,
-			LIFTOVER_CHRM.out.shiftedback_vcf,
+			GATK4_MUTECT2.out.vcf.join(LIFTOVER_CHRM.out.shiftedback_vcf)
 		)
 
 		MERGE_MUTECT_STATS (
-			GATK4_MUTECT2_SHIFTED.out.stats,
-			GATK4_MUTECT2.out.stats
+			GATK4_MUTECT2_SHIFTED.out.stats.join(GATK4_MUTECT2.out.stats)
 		)
 
-		MERGE_VCFS_CHRM.out.merged_vcf.map { sample, vcf, idx -> [ sample ] }.view()
-
-		FILTER_MUTECT_CALLS (
-			MERGE_VCFS_CHRM.out.merged_vcf,
+		FILTER_MUTECT_CALLS_INITIAL (
+			MERGE_VCFS_CHRM.out.merged_vcf.join(MERGE_MUTECT_STATS.out.combined_stats),
 			ref_chrM_fasta,
 			ref_chrM_fasta_fai,
 			ref_chrM_dict,
-			MERGE_MUTECT_STATS.out.combined_stats,
 			params.chrM_blacklisted_sites,
 			params.chrM_blacklisted_sites_index
 		)
 
 		SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES (
-			FILTER_MUTECT_CALLS.out.filtered_vcf,
+			FILTER_MUTECT_CALLS_INITIAL.out.filtered_vcf,
 			ref_chrM_fasta,
 			ref_chrM_fasta_fai,
 			ref_chrM_dict
@@ -1220,20 +1217,19 @@ workflow SNVS_MITOCHONDRIA {
 			SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES.out.split_pass_vcf
 		)
 
-		HAPLOCHECK.out.hasContamination.view()
+		//HAPLOCHECK.out.haplocheck_contamination.view()
+		//MERGE_VCFS_CHRM.out.merged_vcf.view()
 
 		FILTER_MUTECT_CALLS_CONTAMINATION (
-			MERGE_VCFS_CHRM.out.merged_vcf,
+			FILTER_MUTECT_CALLS_INITIAL.out.filtered_vcf.join(MERGE_MUTECT_STATS.out.combined_stats).join(HAPLOCHECK.out.haplocheck_contamination),
 			ref_chrM_fasta,
 			ref_chrM_fasta_fai,
 			ref_chrM_dict,
-			MERGE_MUTECT_STATS.out.combined_stats,
 			params.chrM_blacklisted_sites,
-			params.chrM_blacklisted_sites_index,
-			HAPLOCHECK.out.hasContamination,
-			HAPLOCHECK.out.major_level,
-			HAPLOCHECK.out.minor_level
+			params.chrM_blacklisted_sites_index
 		)
+		
+		//FILTER_MUTECT_CALLS_CONTAMINATION.out.contamination_filtered_vcf.view()
 
 		SPLITMULTIALLELICSSITES_CHR (
 			FILTER_MUTECT_CALLS_CONTAMINATION.out.contamination_filtered_vcf,
@@ -1242,6 +1238,9 @@ workflow SNVS_MITOCHONDRIA {
 			ref_chrM_dict
 		)
 
+		FORMAT2INFO_CHRM (
+			SPLITMULTIALLELICSSITES_CHR.out.final_chrM_vcf
+		)
 
 		VEP_CHRM(
 
@@ -1264,14 +1263,6 @@ workflow SNVS_MITOCHONDRIA {
 			params.dENOVO_DB_tbi,
 			params.cLINVAR,
 			params.cLINVAR_tbi,
-			params.gNOMADg,
-			params.gNOMADg_tbi,
-			params.gNOMADe,
-			params.gNOMADe_tbi,
-			params.gNOMADg_cov,
-			params.gNOMADg_cov_tbi,
-			params.gNOMADe_cov,
-			params.gNOMADe_cov_tbi,
 			params.cSVS,
 			params.cSVS_tbi,
 			params.mutScore,
@@ -1290,14 +1281,34 @@ workflow SNVS_MITOCHONDRIA {
 			params.vep_fai,
 			params.vep_gzi,
 			params.vep_assembly,
-			SPLITMULTIALLELICSSITES_CHR.out.final_chrM_vcf,
+			SPLITMULTIALLELICSSITES_CHR.out.final_chrM_vcf.join(FORMAT2INFO_CHRM.out.sample_info),
 			params.assembly,
 			params.mit_polymorphisms, 
 			params.mit_polymorphisms_tbi,
+			params.mit_disease,
+			params.mit_disease_tbi,
 			params.mitomap_genomeloci,
-			params.mitomap_genomeloci_tbi
-			
+			params.mitomap_genomeloci_tbi,
+			params.mitotip,
+			params.mitotip_tbi,
+			params.gnomad_chrM,
+			params.gnomad_chrM_tbi
+
 		)
+
+		PVM_CHRM (
+			VEP_CHRM.out.vep_tsv,
+			params.dbNSFP_gene,
+			params.omim,
+			params.regiondict,
+			params.domino,
+			params.gene_panels,
+            params.tissue_expression,
+			params.genelist,
+			params.glowgenes,
+			params.assembly,
+			projectDir )
+
 		//BWA_CHRM.out.mapped_bam
 		//BWA_CHRM_SHIFTED.out.mapped_bam
 
@@ -1862,7 +1873,7 @@ workflow {
                 .groupTuple()
                 //.view()
 
-                bamstomerge.view()
+                //bamstomerge.view()
 
 
                 MERGEBAM(
@@ -1870,7 +1881,7 @@ workflow {
                         params.assembly
                         )
 
-                MERGEBAM.out.bam.view()
+                //MERGEBAM.out.bam.view()
 
 				
 			bam = MERGEBAM.out.bam

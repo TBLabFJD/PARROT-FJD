@@ -2985,7 +2985,7 @@ process BEDPROCCESING {
 		else if ( window )
 			"""
 			panel="\$(basename ${bed} .bed)"
-			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrMT" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | sort -V -k1,1 -k2,2 > \${panel}.min${min_target}bp.cnv.bed
+			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrM" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | sort -V -k1,1 -k2,2 > \${panel}.min${min_target}bp.cnv.bed
 
 			python ${projectDir}/tasks/CNV_windowSize.py \${panel}.min${min_target}bp.cnv.bed \${panel}.min${min_target}bp.cnv.bed_unsorted
 			sort -V -k1,1 -k2,2 \${panel}.min${min_target}bp.cnv.bed_unsorted | uniq > \${panel}.window125bp.min${min_target}bp.cnv.bed
@@ -2996,7 +2996,7 @@ process BEDPROCCESING {
 		else
 			"""
 			panel="\$(basename ${bed} .bed)"
-			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrMT" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | bedtools sort -g ${fai} -i stdin > \${panel}.min${min_target}bp.cnv.bed
+			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrM" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | bedtools sort -g ${fai} -i stdin > \${panel}.min${min_target}bp.cnv.bed
 			"""
 }
 
@@ -3056,7 +3056,7 @@ process BEDPROCCESING2 {
 		else if ( window )
 			"""
 			panel="\$(basename ${bed} .bed)"
-			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrMT" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | sort -V -k1,1 -k2,2 > \${panel}.min${min_target}bp.cnv.bed
+			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrM" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | sort -V -k1,1 -k2,2 > \${panel}.min${min_target}bp.cnv.bed
 
 			// python ${projectDir}/tasks/CNV_windowSize.py \${panel}.min${min_target}bp.cnv.bed \${panel}.min${min_target}bp.cnv.bed_unsorted
 			sort -V -k1,1 -k2,2 \${panel}.min${min_target}bp.cnv.bed_unsorted | uniq > \${panel}.window125bp.min${min_target}bp.cnv.bed
@@ -3067,7 +3067,7 @@ process BEDPROCCESING2 {
 		else
 			"""
 			panel="\$(basename ${bed} .bed)"
-			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrMT" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | bedtools sort -g ${fai} -i stdin > \${panel}.min${min_target}bp.cnv.bed
+			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrM" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | bedtools sort -g ${fai} -i stdin > \${panel}.min${min_target}bp.cnv.bed
 			"""
 }
 
@@ -4346,8 +4346,7 @@ process MERGE_VCFS_CHRM {
 	label "gatk"	
 
 	input:
-		tuple val(sample), path(vcf_chrm)
-		tuple val(sample), path(vcf_shiftedback)
+		tuple val(sample), path(vcf_chrmt), path(vcf_shiftedback)
 
 	output:
 		tuple \
@@ -4359,7 +4358,7 @@ process MERGE_VCFS_CHRM {
 
 		"""
 		gatk MergeVcfs \
-			--I ${vcf_chrm} \
+			--I ${vcf_chrmt} \
 			--I ${vcf_shiftedback} \
 			--O ${sample}.merged.vcf
 		"""
@@ -4370,8 +4369,7 @@ process MERGE_MUTECT_STATS {
     label "gatk"
 
     input:
-	tuple val(sample), path(shifted_stats)
-	tuple val(sample), path(non_shifted_stats)
+	tuple val(sample), path(shifted_stats), path(non_shifted_stats)
 
     output:
 
@@ -4391,15 +4389,14 @@ process MERGE_MUTECT_STATS {
 }
 
 
-process FILTER_MUTECT_CALLS {
+process FILTER_MUTECT_CALLS_INITIAL {
     label "gatk"
 
     input:
-	tuple val(sample), path(vcf), path(vcf_index)
+	tuple val(sample), path(vcf), path(vcf_index), path(stats)
 	path ref_fasta
 	path ref_fai
 	path dict
-	tuple val(sample), path(stats)
 	path (blacklisted_sites)
 	path (blacklisted_sites_index)
 
@@ -4474,12 +4471,17 @@ process HAPLOCHECK {
 
     output:
 
-    tuple val(sample), path("contamination.txt") , emit: hasContamination
-    tuple val(sample), path("major_hg.txt") , emit: major_hg
-    tuple val(sample), path("minor_hg.txt") , emit: minor_hg
-    tuple val(sample), path("mean_het_major.txt") , emit: major_level
-    tuple val(sample), path("mean_het_minor.txt") , emit: minor_level
-    tuple val(sample), path("*.html"), emit: html
+	tuple val(sample), \
+		path("${sample}.contamination.txt"), \
+		path("${sample}.mean_het_major.txt"), \
+		path("${sample}.mean_het_minor.txt"), emit: haplocheck_contamination
+
+    //tuple val(sample), path("${sample}.contamination.txt") , emit: hasContamination
+    //tuple val(sample), path("${sample}.major_hg.txt") , emit: major_hg
+    //tuple val(sample), path("${sample}.minor_hg.txt") , emit: minor_hg
+    //tuple val(sample), path("${sample}.mean_het_major.txt") , emit: major_level
+    //tuple val(sample), path("${sample}.mean_het_minor.txt") , emit: minor_level
+    //tuple val(sample), path("${sample}.html"), emit: html
 
 	script:
 
@@ -4506,12 +4508,12 @@ process HAPLOCHECK {
 			echo \$FORMAT_ERROR; exit 1
 		fi
 
-		grep -v "Sample" ${sample}-noquotes >  output-data
-		awk -F "\t" '{print \$2}' output-data > contamination.txt
-		awk -F "\t" '{print \$10}' output-data > major_hg.txt
-		awk -F "\t" '{print \$12}' output-data > minor_hg.txt
-		awk -F "\t" '{print \$8}' output-data > mean_het_major.txt
-		awk -F "\t" '{print \$9}' output-data > mean_het_minor.txt
+		grep -v "Sample" ${sample}-noquotes >  ${sample}.output-data
+		awk -F "\t" '{print \$2}' ${sample}.output-data > ${sample}.contamination.txt
+		awk -F "\t" '{print \$10}' ${sample}.output-data > ${sample}.major_hg.txt
+		awk -F "\t" '{print \$12}' ${sample}.output-data > ${sample}.minor_hg.txt
+		awk -F "\t" '{print \$8}' ${sample}.output-data > ${sample}.mean_het_major.txt
+		awk -F "\t" '{print \$9}' ${sample}.output-data > ${sample}.mean_het_minor.txt
 
 
 		"""	
@@ -4522,16 +4524,13 @@ process FILTER_MUTECT_CALLS_CONTAMINATION {
     label "gatk"
 
     input:
-	tuple val(sample), path(vcf), path(vcf_index)
+	tuple val(sample), path(vcf), path(vcf_index), path(stats), path (hasContamination), path (major_level), path (minor_level)
 	path ref_fasta
 	path ref_fai
 	path dict
-	tuple val(sample), path(stats)
 	path (blacklisted_sites)
 	path (blacklisted_sites_index)
-	tuple val(sample), path (hasContamination)
-	tuple val(sample), path (major_level)
-	tuple val(sample), path (minor_level)
+
 
     output:
 
@@ -4614,6 +4613,84 @@ process SPLITMULTIALLELICSSITES_CHR {
 }
 
 
+
+process FORMAT2INFO_CHRM {
+	label "bioinfotools"
+
+	input:
+		tuple val(sample), path(final_vcf), path(final_vcf_index)
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.vcf_to_annotate.vcf.gz"), \
+			path("${sample}.vcf_to_annotate.vcf.gz.tbi"), emit: sample_info
+
+	
+	script:
+
+		"""
+		awk 'BEGIN {FS="\t"; OFS="\t"} {
+			if (\$0 ~ /^##/) {
+					print \$0
+				}    
+				else if (\$0 ~ /^#CHROM/) {
+					# Add the new ##INFO=<ID=filter> line before the #CHROM line
+					print "##INFO=<ID=AD_REF,Number=1,Type=String,Description=\"AD ref\">"
+					print "##INFO=<ID=AD_ALT,Number=1,Type=String,Description=\"AD alt\">"
+					print "##INFO=<ID=filter,Number=.,Type=String,Description=\"filter flag\">"
+					print \$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8
+				} else {
+				# Extract fields
+				chrom = \$1
+				pos = \$2
+				id = \$3
+				ref = \$4
+				alt = \$5
+				qual = \$6
+				filter = \$7
+				info = \$8
+				format = \$9
+				sample = \$10
+
+				# Split FORMAT and sample fields
+				split(format, format_fields, ":")
+				split(sample, sample_fields, ":")
+
+				# Create a dictionary to map FORMAT fields to sample values
+				for (i in format_fields) {
+					format_dict[format_fields[i]] = sample_fields[i]
+				}
+
+				# Extract desired fields
+				ad = format_dict["AD"]
+				af = format_dict["AF"]
+
+
+				# Split AD into AD_REF and AD_ALT
+				split(ad, ad_values, ",")
+				ad_ref = ad_values[1]
+				ad_alt = ad_values[2]
+
+				# Append new fields to INFO
+				new_info = info ";AD_REF=" ad_ref ";AD_ALT=" ad_alt ";AF=" af ";filter=" filter
+
+				# Print the transformed line
+				print chrom, pos, id, ref, alt, qual, filter, new_info
+			}
+		}' ${final_vcf} > ${sample}.vcf_to_annotate.vcf
+		
+		bgzip ${sample}.vcf_to_annotate.vcf
+		tabix -p vcf ${sample}.vcf_to_annotate.vcf.gz
+
+		"""
+}
+
+
+
+
+
+
 process VEP_CHRM {
 	label "vep"
 	label "highcpu"
@@ -4641,14 +4718,6 @@ process VEP_CHRM {
 		path(dENOVO_DB_tbi)
 		path(cLINVAR)
 		path(cLINVAR_tbi)
-		path(gNOMADg)
-		path(gNOMADg_tbi)
-		path(gNOMADe)
-		path(gNOMADe_tbi)
-		path(gNOMADg_cov)
-		path(gNOMADg_cov_tbi)
-		path(gNOMADe_cov)
-		path(gNOMADe_cov_tbi)
 		path(cSVS)
 		path(cSVS_tbi)
 		path(mutScore)
@@ -4667,12 +4736,19 @@ process VEP_CHRM {
 		path vep_fai
 		path vep_gzi
 		val vep_assembly
-		tuple val(sample), path(vcf_to_annotate), path(vcf_to_annotate_idx)
+		tuple val(sample), path(vcf_to_annotate), path(vcf_to_annotate_idx), path(vcf_w_sample_info), path(vcf_w_sample_info_index)
 		val assembly
 		path chrM_polymorphisms
 		path chrM_polymorphisms_tbi
+		path chrM_disease
+		path chrM_disease_tbi
 		path mitomap_genomeloci
 		path mitomap_genomeloci_tbi
+		path mitotip
+		path mitotip_tbi
+		path gnomad_chrM
+		path gnomad_chrM_tbi
+	
 	
 	output:
 		tuple \
@@ -4694,18 +4770,18 @@ phyloP470way_mammalian,phastCons470way_mammalian,GERP++_RS,Interpro_domain,GTEx_
 		def cCRS_DB_config        = cCRS_DB        ? "--custom ${cCRS_DB},gnomAD_exomes_CCR,bed,overlap,0 " : ''
 		def dENOVO_DB_config      = dENOVO_DB      ? "--custom ${dENOVO_DB},denovoVariants,vcf,exact,0,SAMPLE_CT " : ''
 		def cLINVAR_config        = cLINVAR        ? "--custom ${cLINVAR},ClinVar,vcf,exact,0,CLNSIG,CLNREVSTAT,CLNDN,CLNSIGCONF " : ''
-		def gNOMADg_config        = gNOMADg        ? "--custom ${gNOMADg},gnomADg,vcf,exact,0,AF,AC,AN,nhomalt,grpmax,AF_grpmax,AC_grpmax,AF_nfe,AC_nfe,filt " : ''
-		def gNOMADe_config        = gNOMADe        ? "--custom ${gNOMADe},gnomADe,vcf,exact,0,AF,AC,AN,nhomalt,grpmax,AF_grpmax,AC_grpmax,AF_nfe,AC_nfe,filt " : ''
-		def gNOMADg_cov_config    = gNOMADg_cov    ? "--custom ${gNOMADg_cov},gnomADg_cov,vcf,overlap,0,median,perc_20x " : ''
-		def gNOMADe_cov_config    = gNOMADe_cov    ? "--custom ${gNOMADe_cov},gnomADe_cov,vcf,overlap,0,median,perc_20x " : ''
 		def cSVS_config           = cSVS           ? "--custom ${cSVS},CSVS,vcf,exact,0,AF,AC " : ''
 		def mutScore_config       = mutScore       ? "--custom ${mutScore},Mut,vcf,exact,0,Score " : ''
 		def mAF_FJD_COHORT_config = mAF_FJD_COHORT ? "--custom ${mAF_FJD_COHORT},FJD_MAF,vcf,exact,0,AF,AC,AF_DS_irdt,AC_DS_irdt,AF_P_eyeg,AC_P_eyeg " : ''
 		def spliceAI_SNV_config   = spliceAI_SNV   ? "--custom ${spliceAI_SNV},SpliceAI_SNV,vcf,exact,0,SpliceAI " : ''
 		def spliceAI_INDEL_config = spliceAI_INDEL ? "--custom ${spliceAI_INDEL},SpliceAI_INDEL,vcf,exact,0,SpliceAI " : ''
 		def REVEL_config       	  = REVEL          ? "--custom ${REVEL},REVEL,vcf,exact,0,Score " : ''
-		def chrM_polymorphisms_config    = chrM_polymorphisms ?  "--custom ${chrM_polymorphisms},chrM_polymorphisms,vcf,exact,0,AF,AC " : ''
-		def chrM_mitomapgenomeloci_config = mitomap_genomeloci ? "--custom ${mitomap_genomeloci},mitomap_genomeloci,bed " : ''
+		def chrM_polymorphisms_config    = chrM_polymorphisms ?  "--custom ${chrM_polymorphisms},Mitomap_GenBank,vcf,exact,0,AC,AF " : ''
+		def chrM_disease_config    = chrM_disease ?  "--custom ${chrM_disease},Mitomap_disease,vcf,exact,0,aachange,Disease,DiseaseStatus,HGFL " : ''
+		def chrM_mitomapgenomeloci_config = mitomap_genomeloci ? "--custom ${mitomap_genomeloci},Mitomap_genomeloci,bed " : ''
+		def chrM_mitotip_config    = mitotip ?  "--custom ${mitotip},MitoTip,vcf,exact,0,MitoTIP_Score,MitoTIP_Quartile,MitoTIP_Count,MitoTIP_Percentage,MitoTIP_Status " : ''
+		def chrM_gnomad_config    = gnomad_chrM ?  "--custom ${gnomad_chrM},gnomAD,vcf,exact,0,AC_hom,AC_het,AF_hom,AF_het,AN,max_observed_heteroplasmy,FILTER " : ''
+		def sample_info_config    = vcf_w_sample_info    ? "--custom ${vcf_w_sample_info},SAMPLE,vcf,exact,0,AD_REF,AD_ALT,AF,DP,filter " : ''
 
 		"""
 		vep \\
@@ -4729,10 +4805,6 @@ phyloP470way_mammalian,phastCons470way_mammalian,GERP++_RS,Interpro_domain,GTEx_
 		${cCRS_DB_config}\\
 		${dENOVO_DB_config}\\
 		${cLINVAR_config}\\
-		${gNOMADg_config}\\
-		${gNOMADe_config}\\
-		${gNOMADg_cov_config}\\
-		${gNOMADe_cov_config}\\
 		${cSVS_config}\\
 		${mutScore_config}\\
 		${mAF_FJD_COHORT_config}\\
@@ -4740,12 +4812,75 @@ phyloP470way_mammalian,phastCons470way_mammalian,GERP++_RS,Interpro_domain,GTEx_
 		${spliceAI_INDEL_config}\\
 		${REVEL_config}\\
 		${chrM_polymorphisms_config} \\
-		${chrM_mitomapgenomeloci_config}
+		${chrM_mitomapgenomeloci_config} \\
+		${chrM_disease_config} \\
+		${chrM_mitotip_config} \\
+		${chrM_gnomad_config} \\
+		${sample_info_config}
+
 		"""
 }
 
 
 
+process PVM_CHRM {
+	label "bioinfotools"
+	label "highmem"
+	publishDir "${params.output}/mitochondria/snvs", mode: 'copy'
+	errorStrategy 'ignore'
+
+	input:
+		tuple val(sample), path(vep_tsv)
+		path dbNSFP_gene 
+		path omim 
+		path regiondict 
+		path domino 
+		path gene_panels
+		path tissue_expression
+		path genefilter 
+		path glowgenes 
+		val assembly
+		path projectDir
+
+	output:
+		//tuple \
+		//	val(sample), \
+		//	path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv"), \
+		//	path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv.xlsx"), emit: pvm_tsv 
+	
+		tuple \
+			val(sample), \
+			path("${sample}.${assembly}.CHRM.SNV.INDEL.annotated.final.tsv"), emit: pvm_tsv 
+		
+		tuple \
+			val(sample), \
+			path("${sample}.${assembly}.CHRM.SNV.INDEL.annotated.final.tsv.xlsx"), emit: pvm_xlsx
+
+	script:
+	
+		def omim_field       = omim       ? "--omim ${omim} " : ''
+		def genefilter_field = genefilter ? "--genefilter ${genefilter} " : ''
+		def glowgenes_field  = glowgenes  ? "--glowgenes ${glowgenes} " : ''
+		def gene_panels_field  = gene_panels  ? "--panels ${gene_panels} " : ''
+
+		"""
+		header_row="\$(head -n 1000 ${vep_tsv} | grep "#Uploaded_variation" -n | sed 's/:.*//')"
+
+		Rscript ${projectDir}/tasks/post-VEP_CHRM_modification.R \\
+		--input ${vep_tsv} \\
+		--output ${sample}.${assembly}.CHRM.SNV.INDEL.annotated.final.tsv \\
+		--numheader \${header_row} \\
+		--dbNSFPgene ${dbNSFP_gene} \\
+		--regiondict ${regiondict} \\
+		--domino ${domino} \\
+		--expression ${tissue_expression} \\
+		--automap ./ \\
+		${omim_field}\\
+		${genefilter_field}\\
+		${glowgenes_field}\\
+		${gene_panels_field}
+		"""
+}
 
 
 
