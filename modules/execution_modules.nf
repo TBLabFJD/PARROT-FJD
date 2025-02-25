@@ -301,6 +301,7 @@ process LOCAL_CHECK {
 		else if ( analysis.contains("S") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("G") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("C") ) { extension_local_check = "(.bam|.cram)" }
+		else if ( analysis.contains("T") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("X") ) { extension_local_check = "(.bam|.cram)" }
 		else if ( analysis.contains("A") ) { extension_local_check = "(.vcf|.vcf.gz)" }
 		else if ( analysis.contains("N") ) { extension_local_check = "(.tsv|.bed)" }
@@ -2984,7 +2985,7 @@ process BEDPROCCESING {
 		else if ( window )
 			"""
 			panel="\$(basename ${bed} .bed)"
-			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrMT" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | sort -V -k1,1 -k2,2 > \${panel}.min${min_target}bp.cnv.bed
+			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrM" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | sort -V -k1,1 -k2,2 > \${panel}.min${min_target}bp.cnv.bed
 
 			python ${projectDir}/tasks/CNV_windowSize.py \${panel}.min${min_target}bp.cnv.bed \${panel}.min${min_target}bp.cnv.bed_unsorted
 			sort -V -k1,1 -k2,2 \${panel}.min${min_target}bp.cnv.bed_unsorted | uniq > \${panel}.window125bp.min${min_target}bp.cnv.bed
@@ -2995,7 +2996,7 @@ process BEDPROCCESING {
 		else
 			"""
 			panel="\$(basename ${bed} .bed)"
-			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrMT" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | bedtools sort -g ${fai} -i stdin > \${panel}.min${min_target}bp.cnv.bed
+			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrM" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | bedtools sort -g ${fai} -i stdin > \${panel}.min${min_target}bp.cnv.bed
 			"""
 }
 
@@ -3055,7 +3056,7 @@ process BEDPROCCESING2 {
 		else if ( window )
 			"""
 			panel="\$(basename ${bed} .bed)"
-			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrMT" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | sort -V -k1,1 -k2,2 > \${panel}.min${min_target}bp.cnv.bed
+			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrM" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | sort -V -k1,1 -k2,2 > \${panel}.min${min_target}bp.cnv.bed
 
 			// python ${projectDir}/tasks/CNV_windowSize.py \${panel}.min${min_target}bp.cnv.bed \${panel}.min${min_target}bp.cnv.bed_unsorted
 			sort -V -k1,1 -k2,2 \${panel}.min${min_target}bp.cnv.bed_unsorted | uniq > \${panel}.window125bp.min${min_target}bp.cnv.bed
@@ -3066,7 +3067,7 @@ process BEDPROCCESING2 {
 		else
 			"""
 			panel="\$(basename ${bed} .bed)"
-			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrMT" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | bedtools sort -g ${fai} -i stdin > \${panel}.min${min_target}bp.cnv.bed
+			awk '{if((\$3-\$2)>${min_target} && \$1!="MT" && \$1!="chrM" && \$1!="chrX" && \$1!="chrY" && \$1!="Y" && \$1!="X"){print \$0}}' ${bed} | bedtools sort -g ${fai} -i stdin > \${panel}.min${min_target}bp.cnv.bed
 			"""
 }
 
@@ -3997,3 +3998,894 @@ process VCF2BED {
 		done
 		"""
 }
+
+
+// YBQ: Añadimos el análisis del ADN mitocondrial. 
+
+
+process PRINTREADS_CHRM {
+	label "gatk"
+
+	input:
+		tuple val(sample), path(bam), path(bai)
+		path ref_fasta
+		path ref_fai
+		path dict
+		//path gzi
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.chrM.bam"), \
+			path("${sample}.chrM.bai"), emit: bam
+
+	script:
+		"""
+		gatk PrintReads \
+			-R ${ref_fasta} \
+			-L chrM \
+			--read-filter MateOnSameContigOrNoMappedMateReadFilter \
+			--read-filter MateUnmappedAndUnmappedReadFilter \
+			-I ${bam} \
+			--read-index ${bai} \
+			-O ${sample}.chrM.bam
+		"""
+}
+
+
+process REVERTSAM {
+	label "gatk"
+
+	input:
+		tuple val(sample), path(bam), path(bai)
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.chrM.unmapped.bam"), emit: bam
+
+	script:
+		"""
+		gatk RevertSam \
+			INPUT=${bam} \
+			OUTPUT=${sample}.chrM.unmapped.bam \
+			OUTPUT_BY_READGROUP=false \
+			VALIDATION_STRINGENCY=LENIENT \
+			ATTRIBUTE_TO_CLEAR=FT \
+			ATTRIBUTE_TO_CLEAR=CO \
+			SORT_ORDER=queryname \
+			RESTORE_ORIGINAL_QUALITIES=false
+		"""
+}
+
+
+process SAMTOFASTQ {
+	label "gatk"
+
+	input:
+		tuple val(sample), path(bam)
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}_R1.chrM.fastq"), \
+			path("${sample}_R2.chrM.fastq"), emit: fastq
+
+	script:
+		"""
+		gatk SamToFastq \
+			INPUT=${bam} \
+			FASTQ=${sample}_R1.chrM.fastq \
+			SECOND_END_FASTQ=${sample}_R2.chrM.fastq \
+			NON_PF=true
+		"""
+}
+
+
+
+process BWA_CHRM {
+	label "bwa"
+	label "highcpu"
+	label "highmem"
+
+	input:
+		tuple val(sample), path(forward), path(reverse)
+		val ref_name
+		path index
+		path ref
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.${ref_name}.mapped.bam"), emit: mapped_bam
+
+	script:
+		// sample  = fastq[0]
+		// forward = fastq[1]
+		// reverse = fastq[2]
+		"""
+		bwa mem \\
+		${ref} \\
+		${forward} \\
+		${reverse} > ${sample}.${ref_name}.mapped.bam
+
+		"""
+}
+
+
+process MERGEBAMALIGNMENT_CHRM {
+	label "gatk"
+
+	input:
+		tuple val(sample), path(mapped_bam), path(unmapped_bam)
+		path ref
+		path index
+		path dict
+		path scratch
+		val ref_name
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.${ref_name}.mapped.merged.bam"), emit: merged_bam
+
+	script:
+		def scratch_field = scratch ? "--TMP_DIR ${scratch}/${sample}_MergeBamAlignment" : ""
+		def scratch_mkdir = scratch ? "mkdir -p ${scratch}/${sample}_MergeBamAlignment" : ""
+
+		"""
+
+		${scratch_mkdir}
+
+		gatk MergeBamAlignment ${scratch_field} \
+			--VALIDATION_STRINGENCY SILENT \
+			--EXPECTED_ORIENTATIONS FR \
+			--ATTRIBUTES_TO_RETAIN X0 \
+			--ATTRIBUTES_TO_REMOVE NM \
+			--ATTRIBUTES_TO_REMOVE MD \
+			--ALIGNED_BAM ${mapped_bam} \
+			--UNMAPPED_BAM ${unmapped_bam} \
+			--OUTPUT ${sample}.${ref_name}.mapped.merged.bam \
+			--REFERENCE_SEQUENCE ${ref} \
+			--PAIRED_RUN true \
+			--SORT_ORDER "unsorted" \
+			--IS_BISULFITE_SEQUENCE false \
+			--ALIGNED_READS_ONLY false \
+			--CLIP_ADAPTERS false \
+			--MAX_RECORDS_IN_RAM 2000000 \
+			--ADD_MATE_CIGAR true \
+			--MAX_INSERTIONS_OR_DELETIONS -1 \
+			--PRIMARY_ALIGNMENT_STRATEGY MostDistant \
+			--UNMAPPED_READ_STRATEGY COPY_TO_TAG \
+			--ALIGNER_PROPER_PAIR_FLAGS true \
+			--UNMAP_CONTAMINANT_READS true \
+			--ADD_PG_TAG_TO_READS false
+		"""
+}
+
+
+process MARKDUPLICATES_CHRM {
+	label "gatk"
+	label "mediumcpu"
+	label "mediummem"
+	maxRetries 3
+
+	input:
+		tuple val(sample), path(merged_bam)
+		path scratch
+		val ref_name
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.${ref_name}.dedupped.sorted.bam"), emit: deduppedsorted_bam
+		tuple \
+			val(sample), \
+			path("marked_dup_metrics_${sample}.${ref_name}.txt"), emit: dedupped_txt
+
+	script:
+		//def scratch_field = scratch ? "--conf 'spark.local.dir=${scratch}/${sample}.${ref_name}_MarkDuplicatesSpark'" : ""
+		//def scratch_mkdir = scratch ? "mkdir -p ${scratch}/${sample}.${ref_name}_MarkDuplicatesSpark" : ""
+
+		"""
+		gatk MarkDuplicates \
+		-I ${merged_bam} \
+		-O ${sample}.${ref_name}.dedupped.sorted.bam \
+		-M marked_dup_metrics_${sample}.${ref_name}.txt \
+		--VALIDATION_STRINGENCY "SILENT" \
+		--OPTICAL_DUPLICATE_PIXEL_DISTANCE 2500 \
+		--ASSUME_SORT_ORDER queryname \
+		--CLEAR_DT "false" \
+		--ADD_PG_TAG_TO_READS false 
+		
+
+		#chmod 777 \$(find . -user root) 
+		chmod 777 *.dedupped.sorted.bam* .command.trace marked_dup_metrics*
+		"""
+}
+
+process SORTSAM_CHRM {
+	label "gatk"	
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
+
+	input:
+		tuple val(sample), path(merged_bam)
+		path scratch
+		val ref_name
+		
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.${ref_name}.sorted.bam"), \
+			path("${sample}.${ref_name}.sorted.bai"), emit: sorted_bam
+
+	script:
+		def scratch_field = scratch ? "--TMP_DIR ${scratch}/${sample}.${ref_name}_SortSam" : ""
+		def scratch_mkdir = scratch ? "mkdir -p ${scratch}/${sample}.${ref_name}_SortSam" : ""
+		"""
+
+		${scratch_mkdir}
+
+		gatk SortSam ${scratch_field} \
+		--INPUT ${merged_bam} \
+		--OUTPUT ${sample}.${ref_name}.sorted.bam \
+		--SORT_ORDER "coordinate" \
+		--CREATE_INDEX true \
+		--CREATE_MD5_FILE false 
+		"""
+}
+
+
+process COLLECTWGSMETRICTS {
+	label "gatk"	
+	maxRetries 3
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
+	publishDir "${params.output}/mitochondria/metrics", mode: 'copy'
+
+	input:
+		tuple val(sample), path(bam), path(bai)
+		path ref
+		
+	output:
+		tuple \
+			val(sample), \
+			path("metrics.txt"), \
+			path("theoretical_sensitivity.txt"), emit: metrics
+
+	script:
+
+		"""
+		gatk CollectWgsMetrics \
+			--INPUT ${bam} \
+			--VALIDATION_STRINGENCY "SILENT" \
+			--REFERENCE_SEQUENCE ${ref} \
+			--OUTPUT metrics.txt \
+			--USE_FAST_ALGORITHM true \
+			--COVERAGE_CAP 100000 \
+			--INCLUDE_BQ_HISTOGRAM true \
+			--THEORETICAL_SENSITIVITY_OUTPUT theoretical_sensitivity.txt
+		"""
+}
+
+process GATK4_MUTECT2 {
+
+    label "gatk"
+
+    input:
+	tuple val(sample), path(bam), path(bai)
+	path ref_fasta
+	path ref_fai
+	path dict
+	path scratch
+	val ref_name
+	val region
+
+
+    output:
+
+    tuple val(sample), path("*.vcf")     , emit: vcf
+    tuple val(sample), path("*.stats")      , emit: stats
+
+
+	script:
+	def scratch_field   = scratch ? "--tmp-dir ${scratch}/${sample}_HaplotypeCaller" : ""	
+	def scratch_mkdir   = scratch ? "mkdir -p ${scratch}/${sample}_HaplotypeCaller" : ""
+
+	"""
+	${scratch_mkdir}
+
+	gatk --java-options "-Xmx${params.mediummem}g" \\
+        Mutect2 ${scratch_field} \\
+        -I ${bam} \\
+		-R ${ref_fasta} \\
+		--read-filter MateOnSameContigOrNoMappedMateReadFilter \\
+        --read-filter MateUnmappedAndUnmappedReadFilter \\
+		-O ${sample}.${ref_name}.vcf \\
+		--bam-output bamout.${ref_name}.bam  \\
+		-L ${region} \\
+		--annotation StrandBiasBySample \\
+        --mitochondria-mode \\
+        --max-mnp-distance 0 \\
+		--max-reads-per-alignment-start 75
+
+    """
+}
+
+
+process LIFTOVER_CHRM {
+	label "gatk"	
+
+	input:
+		tuple val(sample), path(vcf)
+		path ref_fasta
+		path dict
+		path chain
+
+	output:
+		tuple \
+			val(sample), \
+			path("*.shifted_back.vcf"), emit: shiftedback_vcf
+		tuple \
+			val(sample), \
+			path("*.rejected.vcf"), emit: rejected_vcf
+
+	script:
+
+		"""
+		gatk LiftoverVcf \
+			--INPUT ${vcf} \
+			--OUTPUT ${sample}.shifted_back.vcf \
+			-R ${ref_fasta} \
+			--CHAIN ${chain} \
+			--REJECT ${sample}.rejected.vcf
+		"""
+}
+
+process MERGE_VCFS_CHRM {
+	label "gatk"	
+
+	input:
+		tuple val(sample), path(vcf_chrmt), path(vcf_shiftedback)
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.merged.vcf"), 
+			path("${sample}.merged.vcf.idx"), emit: merged_vcf
+
+	script:
+
+		"""
+		gatk MergeVcfs \
+			--I ${vcf_chrmt} \
+			--I ${vcf_shiftedback} \
+			--O ${sample}.merged.vcf
+		"""
+}
+
+
+process MERGE_MUTECT_STATS {
+    label "gatk"
+
+    input:
+	tuple val(sample), path(shifted_stats), path(non_shifted_stats)
+
+    output:
+
+    tuple val(sample), path("${sample}.combined.stats")   , emit: combined_stats
+
+	script:
+
+		"""
+
+		gatk MergeMutectStats \\
+		--stats ${shifted_stats} \\
+		--stats ${non_shifted_stats} \\
+		-O ${sample}.combined.stats
+
+		"""
+	
+}
+
+
+process FILTER_MUTECT_CALLS_INITIAL {
+    label "gatk"
+
+    input:
+	tuple val(sample), path(vcf), path(vcf_index), path(stats)
+	path ref_fasta
+	path ref_fai
+	path dict
+	path (blacklisted_sites)
+	path (blacklisted_sites_index)
+
+    output:
+
+    tuple val(sample), path("${sample}.filtered.vcf"), path("${sample}.filtered.vcf.idx"), emit: filtered_vcf
+	
+	script:
+
+
+		"""
+
+		gatk --java-options "-Xmx${params.mediummem}g" \\
+			FilterMutectCalls  \\
+			-V ${vcf} \\
+			-R ${ref_fasta} \\
+			-O ${sample}.mutect_filtered.vcf \\
+			--stats ${stats} \\
+			--mitochondria-mode  \\
+			--max-alt-allele-count 4 \\
+			--min-allele-fraction 0 \\
+
+		gatk VariantFiltration  \\
+			-V 	${sample}.mutect_filtered.vcf \\
+			-O  ${sample}.filtered.vcf \\
+			--apply-allele-specific-filters \\
+			--mask ${blacklisted_sites} \\
+			--mask-name "blacklisted_site"
+
+		"""	
+}
+
+
+process SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES {
+    label "gatk"
+
+    input:
+	tuple val(sample), path(vcf), path(vcf_index)
+	path ref_fasta
+	path ref_fai
+	path dict
+
+
+    output:
+    tuple val(sample), path("${sample}.filtered.splitAndPassOnly.vcf"), path("${sample}.filtered.splitAndPassOnly.vcf.idx")     , emit: split_pass_vcf
+
+	script:
+
+		"""
+		gatk LeftAlignAndTrimVariants  \\
+			-V ${vcf} \\
+			-R ${ref_fasta} \\
+			-O ${sample}.filtered.split.vcf \\
+			--split-multi-allelics \\
+			--dont-trim-alleles \\
+			--keep-original-ac 
+
+		gatk SelectVariants \
+			-V ${sample}.filtered.split.vcf \\
+			-O ${sample}.filtered.splitAndPassOnly.vcf \\
+			--exclude-filtered
+
+		"""	
+}
+
+
+process HAPLOCHECK {
+	container "https://depot.galaxyproject.org/singularity/haplocheck:1.3.3--h4a94de4_0"
+
+	input:
+	tuple val(sample), path(vcf), path(vcf_index)
+
+    output:
+
+	tuple val(sample), \
+		path("${sample}.contamination.txt"), \
+		path("${sample}.mean_het_major.txt"), \
+		path("${sample}.mean_het_minor.txt"), emit: haplocheck_contamination
+
+    //tuple val(sample), path("${sample}.contamination.txt") , emit: hasContamination
+    //tuple val(sample), path("${sample}.major_hg.txt") , emit: major_hg
+    //tuple val(sample), path("${sample}.minor_hg.txt") , emit: minor_hg
+    //tuple val(sample), path("${sample}.mean_het_major.txt") , emit: major_level
+    //tuple val(sample), path("${sample}.mean_het_minor.txt") , emit: minor_level
+    //tuple val(sample), path("${sample}.html"), emit: html
+
+	script:
+
+		"""
+		haplocheck --raw --out ${sample} ${vcf}
+		sed 's/\"//g' ${sample}.raw.txt > ${sample}-noquotes
+		grep "Sample" ${sample}-noquotes > headers
+
+		FORMAT_ERROR="Bad contamination file format"
+
+		if [ `awk 'BEGIN { FS = "\t" };{print \$2}' headers` != "Contamination Status" ]; then
+			echo \$FORMAT_ERROR; exit 1
+		fi
+		if [ `awk 'BEGIN { FS = "\t" };{print \$10}' headers` != "Major Haplogroup" ]; then
+			echo \$FORMAT_ERROR; exit 1
+		fi
+		if [ `awk 'BEGIN { FS = "\t" };{print \$12}' headers` != "Minor Haplogroup" ]; then
+			echo \$FORMAT_ERROR; exit 1
+		fi
+		if [ `awk 'BEGIN { FS = "\t" };{print \$8}' headers` != "Major Heteroplasmy Level" ]; then
+			echo \$FORMAT_ERROR; exit 1
+		fi
+		if [ `awk 'BEGIN { FS = "\t" };{print \$9}' headers` != "Minor Heteroplasmy Level" ]; then
+			echo \$FORMAT_ERROR; exit 1
+		fi
+
+		grep -v "Sample" ${sample}-noquotes >  ${sample}.output-data
+		awk -F "\t" '{print \$2}' ${sample}.output-data > ${sample}.contamination.txt
+		awk -F "\t" '{print \$10}' ${sample}.output-data > ${sample}.major_hg.txt
+		awk -F "\t" '{print \$12}' ${sample}.output-data > ${sample}.minor_hg.txt
+		awk -F "\t" '{print \$8}' ${sample}.output-data > ${sample}.mean_het_major.txt
+		awk -F "\t" '{print \$9}' ${sample}.output-data > ${sample}.mean_het_minor.txt
+
+
+		"""	
+
+}
+
+process FILTER_MUTECT_CALLS_CONTAMINATION {
+    label "gatk"
+
+    input:
+	tuple val(sample), path(vcf), path(vcf_index), path(stats), path (hasContamination), path (major_level), path (minor_level)
+	path ref_fasta
+	path ref_fai
+	path dict
+	path (blacklisted_sites)
+	path (blacklisted_sites_index)
+
+
+    output:
+
+    tuple val(sample), path("${sample}.contamination_filtered.vcf"), path("${sample}.contamination_filtered.vcf.idx"), emit: contamination_filtered_vcf
+	
+	script:
+
+		"""
+
+		hasContamination_check=\$(cat ${hasContamination} )
+		contamination_major=\$(cat ${major_level} )
+		contamination_minor=\$(cat ${minor_level} )
+
+		echo \$hasContamination_check \$contamination_major  \$contamination_minor 
+
+		if [ \$hasContamination_check == "YES" ] 
+		then 
+			if [ \$contamination_major == "0.0" ]
+			then
+				hc_contamination=\$contamination_minor
+			else 
+				hc_contamination=\$(echo "1.0 - \$contamination_major" | bc)
+			fi
+		else 
+			hc_contamination=0
+		fi
+
+		echo "#######"
+		echo \$hc_contamination
+		echo "#######"
+
+		gatk --java-options "-Xmx${params.mediummem}g" \\
+			FilterMutectCalls  \\
+			-V ${vcf} \\
+			-R ${ref_fasta} \\
+			-O ${sample}.mutect_filtered.vcf \\
+			--stats ${stats} \\
+			--mitochondria-mode  \\
+			--max-alt-allele-count 4 \\
+			--min-allele-fraction 0 \\
+			--contamination-estimate \$hc_contamination
+
+		gatk VariantFiltration  \\
+			-V 	${sample}.mutect_filtered.vcf \\
+			-O  ${sample}.contamination_filtered.vcf \\
+			--apply-allele-specific-filters \\
+			--mask ${blacklisted_sites} \\
+			--mask-name "blacklisted_site"
+
+		"""	
+}
+
+process SPLITMULTIALLELICSSITES_CHR {
+    label "gatk"
+	publishDir "${params.output}/mitochondria/snvs", mode: 'copy'
+
+
+    input:
+	tuple val(sample), path(vcf), path(vcf_index)
+	path ref_fasta
+	path ref_fai
+	path dict
+
+
+    output:
+    tuple val(sample), path("${sample}.chrM.final.vcf"), path("${sample}.chrM.final.vcf.idx")     , emit: final_chrM_vcf
+
+	script:
+
+		"""
+		gatk LeftAlignAndTrimVariants  \\
+			-V ${vcf} \\
+			-R ${ref_fasta} \\
+			-O ${sample}.chrM.final.vcf \\
+			--split-multi-allelics \\
+			--dont-trim-alleles \\
+			--keep-original-ac 
+
+		"""	
+}
+
+
+
+process FORMAT2INFO_CHRM {
+	label "bioinfotools"
+
+	input:
+		tuple val(sample), path(final_vcf), path(final_vcf_index)
+
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.vcf_to_annotate.vcf.gz"), \
+			path("${sample}.vcf_to_annotate.vcf.gz.tbi"), emit: sample_info
+
+	
+	script:
+
+		"""
+		awk 'BEGIN {FS="\t"; OFS="\t"} {
+			if (\$0 ~ /^##/) {
+					print \$0
+				}    
+				else if (\$0 ~ /^#CHROM/) {
+					# Add the new ##INFO=<ID=filter> line before the #CHROM line
+					print "##INFO=<ID=AD_REF,Number=1,Type=String,Description=\"AD ref\">"
+					print "##INFO=<ID=AD_ALT,Number=1,Type=String,Description=\"AD alt\">"
+					print "##INFO=<ID=filter,Number=.,Type=String,Description=\"filter flag\">"
+					print \$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8
+				} else {
+				# Extract fields
+				chrom = \$1
+				pos = \$2
+				id = \$3
+				ref = \$4
+				alt = \$5
+				qual = \$6
+				filter = \$7
+				info = \$8
+				format = \$9
+				sample = \$10
+
+				# Split FORMAT and sample fields
+				split(format, format_fields, ":")
+				split(sample, sample_fields, ":")
+
+				# Create a dictionary to map FORMAT fields to sample values
+				for (i in format_fields) {
+					format_dict[format_fields[i]] = sample_fields[i]
+				}
+
+				# Extract desired fields
+				ad = format_dict["AD"]
+				af = format_dict["AF"]
+
+
+				# Split AD into AD_REF and AD_ALT
+				split(ad, ad_values, ",")
+				ad_ref = ad_values[1]
+				ad_alt = ad_values[2]
+
+				# Append new fields to INFO
+				new_info = info ";AD_REF=" ad_ref ";AD_ALT=" ad_alt ";AF=" af ";filter=" filter
+
+				# Print the transformed line
+				print chrom, pos, id, ref, alt, qual, filter, new_info
+			}
+		}' ${final_vcf} > ${sample}.vcf_to_annotate.vcf
+		
+		bgzip ${sample}.vcf_to_annotate.vcf
+		tabix -p vcf ${sample}.vcf_to_annotate.vcf.gz
+
+		"""
+}
+
+
+
+
+
+
+process VEP_CHRM {
+	label "vep"
+	label "highcpu"
+	label "highmem"
+	// publishDir "${params.output}/snvs/", mode: 'copy'
+	publishDir "${params.output}/mitochondria/snvs", mode: 'copy'
+
+	input:
+		path(dbscSNV)
+		path(dbscSNV_tbi)
+		path loFtool
+		path exACpLI
+		path(dbNSFP)
+		path(dbNSFP_tbi)
+		path maxEntScan
+		path(cADD_INDELS)
+		path(cADD_INDELS_tbi)
+		path(cADD_SNVS)
+		path(cADD_SNVS_tbi)
+		path(kaviar)
+		path(kaviar_tbi)
+		path(cCRS_DB)
+		path(cCRS_DB_tbi)
+		path(dENOVO_DB)
+		path(dENOVO_DB_tbi)
+		path(cLINVAR)
+		path(cLINVAR_tbi)
+		path(cSVS)
+		path(cSVS_tbi)
+		path(mutScore)
+		path(mutScore_tbi)
+		path(mAF_FJD_COHORT)
+		path(mAF_FJD_COHORT_tbi)
+		path(spliceAI_SNV)
+		path(spliceAI_SNV_tbi)
+		path(spliceAI_INDEL)
+		path(spliceAI_INDEL_tbi)
+		path(REVEL)
+		path(REVEL_tbi)
+		path vep_cache
+		path vep_plugins
+		path vep_fasta
+		path vep_fai
+		path vep_gzi
+		val vep_assembly
+		tuple val(sample), path(vcf_to_annotate), path(vcf_to_annotate_idx), path(vcf_w_sample_info), path(vcf_w_sample_info_index)
+		val assembly
+		path chrM_polymorphisms
+		path chrM_polymorphisms_tbi
+		path chrM_disease
+		path chrM_disease_tbi
+		path mitomap_genomeloci
+		path mitomap_genomeloci_tbi
+		path mitotip
+		path mitotip_tbi
+		path gnomad_chrM
+		path gnomad_chrM_tbi
+	
+	
+	output:
+		tuple \
+			val(sample), \
+			path("${sample}.${assembly}.vep.tsv"), emit: vep_tsv
+	
+	script:
+		def dbscSNV_config = dbscSNV ? "--plugin dbscSNV,${dbscSNV} " : ''
+		def loFtool_config = loFtool ? "--plugin LoFtool,${loFtool} " : ''
+		def exACpLI_config = exACpLI ? "--plugin pLI,${exACpLI} " : ''
+		def dbNSFP_config  = dbNSFP  ? "--plugin dbNSFP,${dbNSFP},\
+LRT_pred,M-CAP_pred,MetaLR_pred,MetaSVM_pred,MutationAssessor_pred,MutationTaster_pred,PROVEAN_pred,\
+FATHMM_pred,MetaRNN_pred,PrimateAI_pred,DEOGEN2_pred,BayesDel_addAF_pred,BayesDel_noAF_pred,ClinPred_pred,\
+LIST-S2_pred,Aloft_pred,fathmm-MKL_coding_pred,fathmm-XF_coding_pred,Polyphen2_HDIV_pred,Polyphen2_HVAR_pred,\
+phyloP470way_mammalian,phastCons470way_mammalian,GERP++_RS,Interpro_domain,GTEx_V8_eQTL_gene,GTEx_V8_eQTL_tissue " : ''
+		def maxEntScan_config     = maxEntScan    ? "--plugin MaxEntScan,${maxEntScan} " : ''
+		def cADD_config           = cADD_INDELS && cADD_SNVS ? "--plugin CADD,${cADD_INDELS},${cADD_SNVS} " : ''
+		def kaviar_config         = kaviar         ? "--custom ${kaviar},kaviar,vcf,exact,0,AF,AC,AN " : ''
+		def cCRS_DB_config        = cCRS_DB        ? "--custom ${cCRS_DB},gnomAD_exomes_CCR,bed,overlap,0 " : ''
+		def dENOVO_DB_config      = dENOVO_DB      ? "--custom ${dENOVO_DB},denovoVariants,vcf,exact,0,SAMPLE_CT " : ''
+		def cLINVAR_config        = cLINVAR        ? "--custom ${cLINVAR},ClinVar,vcf,exact,0,CLNSIG,CLNREVSTAT,CLNDN,CLNSIGCONF " : ''
+		def cSVS_config           = cSVS           ? "--custom ${cSVS},CSVS,vcf,exact,0,AF,AC " : ''
+		def mutScore_config       = mutScore       ? "--custom ${mutScore},Mut,vcf,exact,0,Score " : ''
+		def mAF_FJD_COHORT_config = mAF_FJD_COHORT ? "--custom ${mAF_FJD_COHORT},FJD_MAF,vcf,exact,0,AF,AC,AF_DS_irdt,AC_DS_irdt,AF_P_eyeg,AC_P_eyeg " : ''
+		def spliceAI_SNV_config   = spliceAI_SNV   ? "--custom ${spliceAI_SNV},SpliceAI_SNV,vcf,exact,0,SpliceAI " : ''
+		def spliceAI_INDEL_config = spliceAI_INDEL ? "--custom ${spliceAI_INDEL},SpliceAI_INDEL,vcf,exact,0,SpliceAI " : ''
+		def REVEL_config       	  = REVEL          ? "--custom ${REVEL},REVEL,vcf,exact,0,Score " : ''
+		def chrM_polymorphisms_config    = chrM_polymorphisms ?  "--custom ${chrM_polymorphisms},Mitomap_GenBank,vcf,exact,0,AC,AF " : ''
+		def chrM_disease_config    = chrM_disease ?  "--custom ${chrM_disease},Mitomap_disease,vcf,exact,0,aachange,Disease,DiseaseStatus,HGFL " : ''
+		def chrM_mitomapgenomeloci_config = mitomap_genomeloci ? "--custom ${mitomap_genomeloci},Mitomap_genomeloci,bed " : ''
+		def chrM_mitotip_config    = mitotip ?  "--custom ${mitotip},MitoTip,vcf,exact,0,MitoTIP_Score,MitoTIP_Quartile,MitoTIP_Count,MitoTIP_Percentage,MitoTIP_Status " : ''
+		def chrM_gnomad_config    = gnomad_chrM ?  "--custom ${gnomad_chrM},gnomAD,vcf,exact,0,AC_hom,AC_het,AF_hom,AF_het,AN,max_observed_heteroplasmy,FILTER " : ''
+		def sample_info_config    = vcf_w_sample_info    ? "--custom ${vcf_w_sample_info},SAMPLE,vcf,exact,0,AD_REF,AD_ALT,AF,DP,filter " : ''
+
+		"""
+		vep \\
+		--cache --offline --dir_cache ${vep_cache} --dir_plugins ${vep_plugins} \\
+		--refseq --species homo_sapiens --assembly ${vep_assembly} --force_overwrite --use_transcript_ref \\
+		--distance 0 --verbose --fork ${params.highcpu} --tab --format vcf --no_stats \\
+		--fasta ${vep_fasta} \\
+		--input_file ${vcf_to_annotate} \\
+		--output_file ${sample}.${assembly}.vep.tsv \\
+		--appris --canonical --ccds \\
+		--check_existing --canonical --numbers --hgvs --biotype --regulatory --symbol --protein \\
+		--sift p --allele_number --variant_class --pubmed \\
+		--polyphen p --tsl --uniprot \\
+		${dbscSNV_config}\\
+		${loFtool_config}\\
+		${exACpLI_config}\\
+		${dbNSFP_config}\\
+		${maxEntScan_config}\\
+		${cADD_config}\\
+		${kaviar_config}\\
+		${cCRS_DB_config}\\
+		${dENOVO_DB_config}\\
+		${cLINVAR_config}\\
+		${cSVS_config}\\
+		${mutScore_config}\\
+		${mAF_FJD_COHORT_config}\\
+		${spliceAI_SNV_config}\\
+		${spliceAI_INDEL_config}\\
+		${REVEL_config}\\
+		${chrM_polymorphisms_config} \\
+		${chrM_mitomapgenomeloci_config} \\
+		${chrM_disease_config} \\
+		${chrM_mitotip_config} \\
+		${chrM_gnomad_config} \\
+		${sample_info_config}
+
+		"""
+}
+
+
+
+process PVM_CHRM {
+	label "bioinfotools"
+	label "highmem"
+	publishDir "${params.output}/mitochondria/snvs", mode: 'copy'
+	errorStrategy 'ignore'
+
+	input:
+		tuple val(sample), path(vep_tsv)
+		path dbNSFP_gene 
+		path omim 
+		path regiondict 
+		path domino 
+		path gene_panels
+		path tissue_expression
+		path genefilter 
+		path glowgenes 
+		val assembly
+		path projectDir
+
+	output:
+		//tuple \
+		//	val(sample), \
+		//	path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv"), \
+		//	path("${sample}.${assembly}.SNV.INDEL.annotated.final.tsv.xlsx"), emit: pvm_tsv 
+	
+		tuple \
+			val(sample), \
+			path("${sample}.${assembly}.CHRM.SNV.INDEL.annotated.final.tsv"), emit: pvm_tsv 
+		
+		tuple \
+			val(sample), \
+			path("${sample}.${assembly}.CHRM.SNV.INDEL.annotated.final.tsv.xlsx"), emit: pvm_xlsx
+
+	script:
+	
+		def omim_field       = omim       ? "--omim ${omim} " : ''
+		def genefilter_field = genefilter ? "--genefilter ${genefilter} " : ''
+		def glowgenes_field  = glowgenes  ? "--glowgenes ${glowgenes} " : ''
+		def gene_panels_field  = gene_panels  ? "--panels ${gene_panels} " : ''
+
+		"""
+		header_row="\$(head -n 1000 ${vep_tsv} | grep "#Uploaded_variation" -n | sed 's/:.*//')"
+
+		Rscript ${projectDir}/tasks/post-VEP_CHRM_modification.R \\
+		--input ${vep_tsv} \\
+		--output ${sample}.${assembly}.CHRM.SNV.INDEL.annotated.final.tsv \\
+		--numheader \${header_row} \\
+		--dbNSFPgene ${dbNSFP_gene} \\
+		--regiondict ${regiondict} \\
+		--domino ${domino} \\
+		--expression ${tissue_expression} \\
+		--automap ./ \\
+		${omim_field}\\
+		${genefilter_field}\\
+		${glowgenes_field}\\
+		${gene_panels_field}
+		"""
+}
+
+
+
+
+
+
+
+

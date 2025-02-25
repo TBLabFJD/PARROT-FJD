@@ -134,6 +134,34 @@ include { GERMLINECNVCALLER } from './modules/execution_modules'
 include { POSTPROCESSGERMLINECNVCALLS } from './modules/execution_modules'
 include { VCF2BED } from './modules/execution_modules'
 
+//// módulos para el análisis de snvs en chrM:
+
+include { PRINTREADS_CHRM } from './modules/execution_modules'
+include { REVERTSAM } from './modules/execution_modules'
+include { SAMTOFASTQ } from './modules/execution_modules'
+include { BWA_CHRM } from './modules/execution_modules'
+include { BWA_CHRM as BWA_CHRM_SHIFTED} from './modules/execution_modules'
+include { MERGEBAMALIGNMENT_CHRM } from './modules/execution_modules'
+include { MERGEBAMALIGNMENT_CHRM as MERGEBAMALIGNMENT_CHRM_SHIFTED} from './modules/execution_modules'
+include { MARKDUPLICATES_CHRM } from './modules/execution_modules'
+include { MARKDUPLICATES_CHRM as MARKDUPLICATES_CHRM_SHIFTED } from './modules/execution_modules'
+include { SORTSAM_CHRM	} from './modules/execution_modules'
+include { SORTSAM_CHRM as SORTSAM_CHRM_SHIFTED } from './modules/execution_modules'
+include { COLLECTWGSMETRICTS	} from './modules/execution_modules'
+include { GATK4_MUTECT2			} from './modules/execution_modules'
+include { GATK4_MUTECT2	as GATK4_MUTECT2_SHIFTED		} from './modules/execution_modules'
+include { LIFTOVER_CHRM			} from './modules/execution_modules'
+include { MERGE_VCFS_CHRM			} from './modules/execution_modules'
+include { MERGE_MUTECT_STATS			} from './modules/execution_modules'
+include { FILTER_MUTECT_CALLS_INITIAL			} from './modules/execution_modules'
+include { FILTER_MUTECT_CALLS_CONTAMINATION		} from './modules/execution_modules'
+include { SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES			} from './modules/execution_modules'
+include { HAPLOCHECK			} from './modules/execution_modules'
+include { SPLITMULTIALLELICSSITES_CHR			} from './modules/execution_modules'
+include { FORMAT2INFO_CHRM			} from './modules/execution_modules'
+include { VEP_CHRM			} from './modules/execution_modules'
+include { PVM_CHRM			} from './modules/execution_modules'
+
 
 
 // def final_vcf  = Channel.fromPath(params.final_vcf)
@@ -263,7 +291,7 @@ workflow CHECK_PARAMS {
 		// m = params.analysis.toUpperCase() =~ /[DMQSGCXAN]/
 		// assert m instanceof Matcher
 		// if ( !m ) {exit 1, "Error: Cannot recognice the any of the specified analisis analysis.\nThe available analysis are: D (Download from BaseSpace), M (Mapping), S (SNV individual), G (SNV GVCF),\nA (SNV annotation), C (CNV calling), N (CNV annotation), X (chrX CNV calling)\n"}
-		if ( !(params.analysis.toUpperCase() =~ /[DMQSGCXAN]/) ) {exit 1, "Error: Cannot recognice the any of the specified analisis analysis.\nThe available analysis are: D (Download from BaseSpace), M (Mapping), S (SNV individual), G (SNV GVCF),\nA (SNV annotation), C (CNV calling), N (CNV annotation), X (chrX CNV calling)\n"}
+		if ( !(params.analysis.toUpperCase() =~ /[DMQSGCXANT]/) ) {exit 1, "Error: Cannot recognice the any of the specified analisis analysis.\nThe available analysis are: D (Download from BaseSpace), M (Mapping), S (SNV individual), G (SNV GVCF),\nA (SNV annotation), C (CNV calling), N (CNV annotation), X (chrX CNV calling), T (chrM SNVs)\n"}
 		println "Analysis type check"
 
 
@@ -993,7 +1021,7 @@ workflow ANNOTATION {
 			files instanceof Collection ? files.collect { file -> [file.getBaseName(), file, automap] } : [[id, files, automap]]
 		}
 		//.view()
-		pvm_files.view()
+		//pvm_files.view()
 		PVM(
 			//VEP.out.vep_tsv.join(AUTOMAP.out.roh_automap),
 			pvm_files,
@@ -1012,7 +1040,7 @@ workflow ANNOTATION {
 		//PVM.out.pvm_tsv.map {id, tsv -> [id.split('_')[0], tsv]}.groupTuple().view()
 
 
-		PVM.out.pvm_tsv.view()
+		//PVM.out.pvm_tsv.view()
 
 		PVM.out.pvm_tsv.map {id, tsv -> [id.split('_')[0], tsv]}.groupTuple()
         .branch {
@@ -1021,7 +1049,7 @@ workflow ANNOTATION {
         }
         .set { branched_ch }  // YBQ: si hay más de un archivo (se ha hecho el split), se guarda en multiple. Si solo hay uno, se guarda en single. 
 
-		branched_ch.multiple.view()
+		//branched_ch.multiple.view()
 
 		MERGE_PVM_TSV(
 			//PVM.out.pvm_tsv.map {id, tsv -> [id.split('_')[0], tsv]}.groupTuple(),
@@ -1034,10 +1062,260 @@ workflow ANNOTATION {
 }
 
 
+/////// YBQ:WORKFLOW para snvs e indels del ADN mitocondrial ////
+
+workflow SNVS_MITOCHONDRIA {
+	take:
+		bam
+		ref_chrM_fasta
+		ref_chrM_fasta_fai
+		ref_chrM_shifted_fasta
+		ref_chrM_shifted_fasta_fai
+		ref_chrM_dict
+		ref_chrM_shifted_dict
+		//ref_chrM_gzi
+		chrM_index
+		chrM_shifted_index
+		chrM_shiftback_chain
+
+	main:
+		PRINTREADS_CHRM (
+			bam,
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict,
+			//ref_chrM_gzi
+		)
+
+		REVERTSAM (
+			PRINTREADS_CHRM.out.bam
+		)
+
+		//REVERTSAM.out.bam.view()
+
+		SAMTOFASTQ (
+			REVERTSAM.out.bam
+		)
+
+		//SAMTOFASTQ.out.fastq.view()
+
+		BWA_CHRM (
+			SAMTOFASTQ.out.fastq,
+			'chrM',
+			file(chrM_index),
+			ref_chrM_fasta
+		)
+
+		BWA_CHRM_SHIFTED (
+			SAMTOFASTQ.out.fastq,
+			'chrM_shifted',
+			file(chrM_shifted_index),
+			ref_chrM_shifted_fasta
+
+		)
+		//BWA_CHRM.out.mapped_bam.join(REVERTSAM.out.bam).view()
+
+		MERGEBAMALIGNMENT_CHRM (
+			BWA_CHRM.out.mapped_bam.join(REVERTSAM.out.bam),
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict,
+			params.scratch,
+			'chrM'
+		)
+
+		MERGEBAMALIGNMENT_CHRM_SHIFTED (
+			BWA_CHRM_SHIFTED.out.mapped_bam.join(REVERTSAM.out.bam),
+			ref_chrM_shifted_fasta,
+			ref_chrM_shifted_fasta_fai,
+			ref_chrM_shifted_dict,
+			params.scratch,
+			'chrM_shifted'
+		)
+
+		MARKDUPLICATES_CHRM (
+			MERGEBAMALIGNMENT_CHRM.out.merged_bam,
+			params.scratch,
+			'chrM'
+		)
+
+		MARKDUPLICATES_CHRM_SHIFTED (
+			MERGEBAMALIGNMENT_CHRM_SHIFTED.out.merged_bam,
+			params.scratch,
+			'chrM_shifted'
+		)
+
+		SORTSAM_CHRM (
+			MARKDUPLICATES_CHRM.out.deduppedsorted_bam,
+			params.scratch,
+			'chrM'
+		)
+
+		SORTSAM_CHRM_SHIFTED (
+			MARKDUPLICATES_CHRM_SHIFTED.out.deduppedsorted_bam,
+			params.scratch,
+			'chrM_shifted'
+		)
+
+		COLLECTWGSMETRICTS (
+			SORTSAM_CHRM.out.sorted_bam,
+			ref_chrM_fasta
+		)
+
+		GATK4_MUTECT2 (
+			SORTSAM_CHRM.out.sorted_bam,
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict,
+			params.scratch,
+			'chrM', 
+			'chrM:576-16024'
+		)
+
+		GATK4_MUTECT2_SHIFTED (
+			SORTSAM_CHRM_SHIFTED.out.sorted_bam,
+			ref_chrM_shifted_fasta,
+			ref_chrM_shifted_fasta_fai,
+			ref_chrM_shifted_dict,
+			params.scratch,
+			'chrM_shifted',
+			'chrM:8025-9144'
+		)
+
+		LIFTOVER_CHRM (
+			GATK4_MUTECT2_SHIFTED.out.vcf,
+			ref_chrM_fasta,
+			ref_chrM_dict,
+			chrM_shiftback_chain
+		)
+
+		MERGE_VCFS_CHRM (
+			GATK4_MUTECT2.out.vcf.join(LIFTOVER_CHRM.out.shiftedback_vcf)
+		)
+
+		MERGE_MUTECT_STATS (
+			GATK4_MUTECT2_SHIFTED.out.stats.join(GATK4_MUTECT2.out.stats)
+		)
+
+		FILTER_MUTECT_CALLS_INITIAL (
+			MERGE_VCFS_CHRM.out.merged_vcf.join(MERGE_MUTECT_STATS.out.combined_stats),
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict,
+			params.chrM_blacklisted_sites,
+			params.chrM_blacklisted_sites_index
+		)
+
+		SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES (
+			FILTER_MUTECT_CALLS_INITIAL.out.filtered_vcf,
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict
+		)
+
+		HAPLOCHECK (
+			SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES.out.split_pass_vcf
+		)
+
+		//HAPLOCHECK.out.haplocheck_contamination.view()
+		//MERGE_VCFS_CHRM.out.merged_vcf.view()
+
+		FILTER_MUTECT_CALLS_CONTAMINATION (
+			FILTER_MUTECT_CALLS_INITIAL.out.filtered_vcf.join(MERGE_MUTECT_STATS.out.combined_stats).join(HAPLOCHECK.out.haplocheck_contamination),
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict,
+			params.chrM_blacklisted_sites,
+			params.chrM_blacklisted_sites_index
+		)
+		
+		//FILTER_MUTECT_CALLS_CONTAMINATION.out.contamination_filtered_vcf.view()
+
+		SPLITMULTIALLELICSSITES_CHR (
+			FILTER_MUTECT_CALLS_CONTAMINATION.out.contamination_filtered_vcf,
+			ref_chrM_fasta,
+			ref_chrM_fasta_fai,
+			ref_chrM_dict
+		)
+
+		FORMAT2INFO_CHRM (
+			SPLITMULTIALLELICSSITES_CHR.out.final_chrM_vcf
+		)
+
+		VEP_CHRM(
+
+			params.dbscSNV,
+			params.dbscSNV_tbi,
+			params.loFtool,
+			params.exACpLI,
+			params.dbNSFP,
+			params.dbNSFP_tbi,
+			params.maxEntScan,
+			params.cADD_INDELS,
+			params.cADD_INDELS_tbi,
+			params.cADD_SNVS,
+			params.cADD_SNVS_tbi,
+			params.kaviar,
+			params.kaviar_tbi,
+			params.cCRS_DB,
+			params.cCRS_DB_tbi,
+			params.dENOVO_DB,
+			params.dENOVO_DB_tbi,
+			params.cLINVAR,
+			params.cLINVAR_tbi,
+			params.cSVS,
+			params.cSVS_tbi,
+			params.mutScore,
+			params.mutScore_tbi,
+			params.mAF_FJD_COHORT,
+			params.mAF_FJD_COHORT_tbi,
+			params.spliceAI_SNV,
+			params.spliceAI_SNV_tbi,
+			params.spliceAI_INDEL,
+			params.spliceAI_INDEL_tbi,
+			params.REVEL,
+			params.REVEL_tbi,
+			params.vep_cache,
+			params.vep_plugins,
+			params.vep_fasta,
+			params.vep_fai,
+			params.vep_gzi,
+			params.vep_assembly,
+			SPLITMULTIALLELICSSITES_CHR.out.final_chrM_vcf.join(FORMAT2INFO_CHRM.out.sample_info),
+			params.assembly,
+			params.mit_polymorphisms, 
+			params.mit_polymorphisms_tbi,
+			params.mit_disease,
+			params.mit_disease_tbi,
+			params.mitomap_genomeloci,
+			params.mitomap_genomeloci_tbi,
+			params.mitotip,
+			params.mitotip_tbi,
+			params.gnomad_chrM,
+			params.gnomad_chrM_tbi
+
+		)
+
+		PVM_CHRM (
+			VEP_CHRM.out.vep_tsv,
+			params.dbNSFP_gene,
+			params.omim,
+			params.regiondict,
+			params.domino,
+			params.gene_panels,
+            params.tissue_expression,
+			params.genelist,
+			params.glowgenes,
+			params.assembly,
+			projectDir )
+
+		//BWA_CHRM.out.mapped_bam
+		//BWA_CHRM_SHIFTED.out.mapped_bam
 
 
+}
 
-
+////////////////////////////
 
 workflow CNVCALLING {
 	take:
@@ -1595,7 +1873,7 @@ workflow {
                 .groupTuple()
                 //.view()
 
-                bamstomerge.view()
+                //bamstomerge.view()
 
 
                 MERGEBAM(
@@ -1603,7 +1881,7 @@ workflow {
                         params.assembly
                         )
 
-                MERGEBAM.out.bam.view()
+                //MERGEBAM.out.bam.view()
 
 				
 			bam = MERGEBAM.out.bam
@@ -1620,7 +1898,7 @@ workflow {
 	}  
 
 
-	if ( params.analysis.toUpperCase() =~ /[QSGCX]/ ){
+	if ( params.analysis.toUpperCase() =~ /[QSGCXT]/ ){
 		
 		if ( params.analysis.toUpperCase().contains("M") ) {
 					
@@ -1857,7 +2135,22 @@ workflow {
 	}
 
 
-
+	if ( params.analysis.toUpperCase().contains("T") ) {
+		//bam.view()
+		SNVS_MITOCHONDRIA(
+			bam,
+			params.ref_chrM_fasta,
+			params.ref_chrM_fasta_index,
+			params.ref_chrM_shifted_fasta, 
+			params.ref_chrM_shifted_fasta_index,
+			params.dict_chrM,
+			params.dict_chrM_shifted,
+			//params.gzi_chrM,
+			params.bwa_index_chrM, 
+			params.bwa_index_chrM_shifted,
+			params.chrM_shiftback_chain
+			)
+	} 
 
 
 // yoli:EN LAS CNVS AÚN NO HEMOS AUTOMATIZADO EL PARALLEL MAPPING. 

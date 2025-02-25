@@ -17,6 +17,7 @@ The different tasks previously mention are divided into different workflows whic
    More than one tool can be chosen using "," (`--vc_tools gatk,dragen`)
  - A (Annotation of SNVs and INDELS). Specified VCF files from a directory (or the ones just generated in the SNV/INDEL calling step) are annotated and transformed into a TSV file.
  - C (CNV calling and annotation). Specified BAM files (or the ones just mapped) are used for CNV calling using Exomedepth, Convading, Panelcn.mops and GATK, and annotation using AnnotSV. In the case of analycing WGS (`--capture G`) the variant calling used is Manta.
+ - T (mitochondrial SNV/indel calling + annotation). Specified BAM files (or the ones just mapped) are used for mitochondrial SNV and INDEL calling using Mutect2. 
 
 Mapping and variant calling processes can be parallelized to speed up the analysis. These option can be activated using the parameters `--parallel_mapping true` and `--parallel_calling true`.
 
