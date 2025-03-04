@@ -1294,8 +1294,14 @@ workflow SNVS_MITOCHONDRIA {
 			params.mitomap_genomeloci_tbi,
 			params.mitotip,
 			params.mitotip_tbi,
-			params.gnomad_chrM,
-			params.gnomad_chrM_tbi
+			params.gnomad_chrM_reduced,
+			params.gnomad_chrM_reduced_tbi,
+			params.gnomad_chrM_full,
+			params.gnomad_chrM_full_tbi,
+			params.mitimpact,
+			params.mitimpact_tbi,
+			params.t_apogee,
+			params.t_apogee_tbi
 
 		)
 

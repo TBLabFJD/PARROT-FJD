@@ -7,6 +7,7 @@
 library(optparse)
 library(data.table)
 library(dplyr)
+library(tidyr)
 
 
 
@@ -96,33 +97,42 @@ panels_path = opt$panels
 
 # VEP
 vep = read.delim(input, header = TRUE, skip = skip-1, stringsAsFactors = F, quote = "", check.names=F, colClasses = "character")
+
+# Split the rows
+vep_split <- vep %>% tidyr::separate_rows(Mitomap_genomeloci, sep = ",")
+#print(nrow(vep))
+#head(vep_split$Mitomap_genomeloci)
+#print(nrow(vep))
+
+vep <- vep_split
 #copy_vep=vep
 #vep=copy_vep
 # dbNSFP gene
 dbNSFP_gene = read.delim(dbNSFPgenepath, header = TRUE, stringsAsFactors = F, quote = "")
-vep = merge(vep, dbNSFP_gene, by.x = "SYMBOL", by.y = "Gene_name", all.x = T)
+#vep = merge(vep, dbNSFP_gene, by.x = "SYMBOL", by.y = "Gene_name", all.x = T)
+vep = merge(vep, dbNSFP_gene, by.x = "Mitomap_genomeloci", by.y = "Gene_name", all.x = T)
 
 # domino: add Graci
 domino = read.delim(dominopath, header = TRUE, stringsAsFactors = F, quote = "")
-vep = merge(vep, domino, by.x = "SYMBOL", by.y = "Gene_name", all.x = T)
+vep = merge(vep, domino, by.x = "Mitomap_genomeloci", by.y = "Gene_name", all.x = T)
 
 # tissue expression: add Yoli
 expression = read.delim(expressionpath, header = TRUE, stringsAsFactors = F, quote = "")
-vep = merge(vep, expression, by.x = "SYMBOL", by.y = "Gene.name", all.x = T)
+vep = merge(vep, expression, by.x = "Mitomap_genomeloci", by.y = "Gene.name", all.x = T)
 
 # OMIM
 if (!is.null(omim_path)){
   omim = read.delim(omim_path, header = F, stringsAsFactors = F, comment.char = "#", quote = "", check.names=F)
   colnames(omim) = c("Chromosome", "Genomic_Position_Start", "Genomic Position End", "Cyto_Location", "Computed_Cyto_Location", "MIM_Number",
     "Gene_Symbols", "Gene_Name",	"Approved_Gene_Symbol", "Entrez_Gene_ID", "Ensembl_Gene_ID", "Comments", "Phenotypes", "Mouse_Gene_Symbol-ID")
-  vep = merge(vep, omim, by.x = "SYMBOL", by.y = "Approved_Gene_Symbol", all.x = T)
+  vep = merge(vep, omim, by.x = "Mitomap_genomeloci", by.y = "Approved_Gene_Symbol", all.x = T)
 }
 
 
 # Gene-Panel 
 if (!is.null(panels_path)){
   gene_panel = read.delim(panels_path, header = TRUE, stringsAsFactors = F, quote = "")
-  vep = merge(vep, gene_panel, by.x = "SYMBOL", by.y = "gene", all.x = T)
+  vep = merge(vep, gene_panel, by.x = "Mitomap_genomeloci", by.y = "gene", all.x = T)
 }
 
 
@@ -175,18 +185,20 @@ df_out$CHROM = unlist(lapply(vep$Location, function(x) strsplit(x, ":")[[1]][1])
 df_out$POS = as.numeric(unlist(lapply(vep$`#Uploaded_variation`, function(x) rev(strsplit(x, "_")[[1]])[2])))
 df_out$REF = vep$USED_REF
 df_out$ALT = vep$Allele
-df_out$Location = vep$Location
-df_out$SYMBOL = vep$SYMBOL
-df_out$Gene_full_name = vep$Gene_full_name
 df_out$REF_COUNT = vep$SAMPLE_AD_REF
 df_out$ALT_COUNT = vep$SAMPLE_AD_ALT
 df_out$AF = vep$SAMPLE_AF
 df_out <- df_out %>% dplyr::mutate(GT = ifelse(as.numeric(AF) >= 0.95, "1/1", "0/1"))
+
+df_out$Location = vep$Location
+df_out$SYMBOL = vep$SYMBOL
+df_out$GeneLoci = vep$Mitomap_genomeloci
+df_out$Gene_full_name = vep$Gene_full_name
 df_out$FILTER = vep$SAMPLE_filter
 if (!is.null(glowgenes_path)) df_out$GLOWgenes = vep$GLOWgenes
 if ((!is.null(genefilter_path)) & (!is.null(glowgenes_path))) df_out$GLOWgenes[df_out$SYMBOL %in% genefilter$V1] = 0 # We assume the genes of the list are the genes from the panel
 df_out$VARIANT_CLASS = vep$VARIANT_CLASS
-df_out$Panels_name = vep$panels
+#df_out$Panels_name = vep$panels
 
 
 #=====================#
@@ -194,7 +206,23 @@ df_out$Panels_name = vep$panels
 #=====================#
 print("Feature information")
 
-df_out$MitoMap_GeneLoci = vep$Mitomap_genomeloci
+
+
+df_out$Existing_variation = vep$Existing_variation
+if (!is.null(dict_region_path)) df_out$Genomic_region = unlist(lapply(vep$Consequence, function(x) as.character(dict_region[strsplit(x, ",")[[1]],2])[which.min(dict_region[strsplit(x, ",")[[1]],2])]))
+df_out$CANONICAL = vep$CANONICAL
+df_out$Feature = vep$Feature
+df_out$Feature_type = vep$Feature_type
+df_out$BIOTYPE = vep$BIOTYPE
+df_out$Consequence = vep$Consequence
+df_out$Functional_effect_general = vep$MitImpact_Functional_effect_general
+df_out$Functional_effect_detailed = vep$MitImpact_Functional_effect_detailed
+#df_out$INTRON = vep$INTRON
+#df_out$EXON = vep$EXON
+df_out$HGVSc = vep$HGVSc
+df_out$HGVSp = vep$HGVSp
+
+
 df_out$MitoMap_aachange = vep$Mitomap_disease_aachange
 df_out$MitoMap_disease = vep$Mitomap_disease_Disease
 df_out$MitoMap_disease_status = vep$Mitomap_disease_DiseaseStatus
@@ -205,22 +233,12 @@ df_out$MitoTip_count = vep$MitoTip_MitoTIP_Count
 df_out$MitoTip_percentage = vep$MitoTip_MitoTIP_Percentage
 df_out$MitoTip_status = vep$MitoTip_MitoTIP_Status
 
-df_out$Existing_variation = vep$Existing_variation
-if (!is.null(dict_region_path)) df_out$Genomic_region = unlist(lapply(vep$Consequence, function(x) as.character(dict_region[strsplit(x, ",")[[1]],2])[which.min(dict_region[strsplit(x, ",")[[1]],2])]))
-df_out$CANONICAL = vep$CANONICAL
-df_out$Feature = vep$Feature
-df_out$Feature_type = vep$Feature_type
-df_out$BIOTYPE = vep$BIOTYPE
-df_out$Consequence = vep$Consequence
-df_out$INTRON = vep$INTRON
-df_out$EXON = vep$EXON
-df_out$HGVSc = vep$HGVSc
-df_out$HGVSp = vep$HGVSp
-df_out$DISTANCE = as.numeric(vep$DISTANCE)
-df_out$STRAND = vep$STRAND
+
+#df_out$DISTANCE = as.numeric(vep$DISTANCE)
+#df_out$STRAND = vep$STRAND
 df_out$Interpro_domain = vep$Interpro_domain
 df_out$Interpro_domain = vep$Interpro_domain
-df_out$Domino_Score = vep$Domino_Score
+#df_out$Domino_Score = vep$Domino_Score
 
 
 #===============#
@@ -239,9 +257,6 @@ df_out$HPO_name = vep$HPO_name
 df_out$PUBMED = vep$PUBMED
 
 
-
-
-
 #=============#
 # Frequencies #
 #=============#
@@ -256,21 +271,35 @@ df_out$gnomAD_AF_hom = vep$gnomAD_AF_hom
 df_out$gnomAD_AF_het = vep$gnomAD_AF_het
 df_out$gnomAD_AN = vep$gnomAD_AN
 df_out$gnomAD_max_observed_heteroplasmy = vep$gnomAD_max_observed_heteroplasmy
+df_out$gnomAD_hap_defining_variant = vep$gnomAD_full_hap_defining_variant
+df_out$gnomAD_hap_defining_variant[df_out$gnomAD_hap_defining_variant == 1] <- TRUE
 df_out$gnomAD_filter = vep$gnomAD_FILTER
 
-df_out$kaviar_AF = vep$kaviar_AF
 df_out$kaviar_AC = vep$kaviar_AC
-df_out$CSVS_AF = as.numeric(unlist(lapply(vep$CSVS_AF, function(x) strsplit(x, ",")[[1]][1])))
-df_out$CSVS_AC = as.numeric(unlist(lapply(vep$CSVS_AC, function(x) strsplit(x, ",")[[1]][1])))
-df_out$FJD_MAF_AF = as.numeric(unlist(lapply(vep$FJD_MAF_AF, function(x) strsplit(x, ",")[[1]][1])))
-df_out$FJD_MAF_AC = as.numeric(unlist(lapply(vep$FJD_MAF_AC, function(x) strsplit(x, ",")[[1]][1])))
+df_out$kaviar_AF = vep$kaviar_AF
+
+df_out$ToMMo_54KJPN_AC = vep$MitImpact_ToMMo_54KJPN_AC
+df_out$ToMMo_54KJPN_AF = vep$MitImpact_ToMMo_54KJPN_AF
+df_out$ToMMo_54KJPN_AN = vep$MitImpact_ToMMo_54KJPN_AN
+
+df_out$HelixMTdb_AC_hom = vep$MitImpact_HelixMTdb_AC_hom
+df_out$HelixMTdb_AF_hom = vep$MitImpact_HelixMTdb_AF_hom
+df_out$HelixMTdb_AC_het = vep$MitImpact_HelixMTdb_AC_het
+df_out$HelixMTdb_AF_het = vep$MitImpact_HelixMTdb_AF_het
+df_out$HelixMTdb_mean_ARF = vep$MitImpact_HelixMTdb_mean_ARF
+df_out$HelixMTdb_max_ARF = vep$MitImpact_HelixMTdb_max_ARF
+
+#df_out$CSVS_AF = as.numeric(unlist(lapply(vep$CSVS_AF, function(x) strsplit(x, ",")[[1]][1])))
+#df_out$CSVS_AC = as.numeric(unlist(lapply(vep$CSVS_AC, function(x) strsplit(x, ",")[[1]][1])))
+#df_out$FJD_MAF_AF = as.numeric(unlist(lapply(vep$FJD_MAF_AF, function(x) strsplit(x, ",")[[1]][1])))
+#df_out$FJD_MAF_AC = as.numeric(unlist(lapply(vep$FJD_MAF_AC, function(x) strsplit(x, ",")[[1]][1])))
 ##add new columns del MAF_FJD de DHR vs pseudocontroles (SON DE OJO LOS PSEUDOCONTROLES)
-df_out$FJD_MAF_AF_DS_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AF_DS_irdt, function(x) strsplit(x, ",")[[1]][1])))
-df_out$FJD_MAF_AC_DS_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AC_DS_irdt, function(x) strsplit(x, ",")[[1]][1])))
-df_out$FJD_MAF_AF_P_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AF_P_eyeg, function(x) strsplit(x, ",")[[1]][1])))
-df_out$FJD_MAF_AC_P_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AC_P_eyeg, function(x) strsplit(x, ",")[[1]][1])))
+#df_out$FJD_MAF_AF_DS_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AF_DS_irdt, function(x) strsplit(x, ",")[[1]][1])))
+#df_out$FJD_MAF_AC_DS_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AC_DS_irdt, function(x) strsplit(x, ",")[[1]][1])))
+#df_out$FJD_MAF_AF_P_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AF_P_eyeg, function(x) strsplit(x, ",")[[1]][1])))
+#df_out$FJD_MAF_AC_P_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AC_P_eyeg, function(x) strsplit(x, ",")[[1]][1])))
                                              
-df_out$denovoVariants_SAMPLE_CT = vep$denovoVariants_SAMPLE_CT
+#df_out$denovoVariants_SAMPLE_CT = vep$denovoVariants_SAMPLE_CT
 
 
 
@@ -279,10 +308,11 @@ df_out$denovoVariants_SAMPLE_CT = vep$denovoVariants_SAMPLE_CT
 #==========================#
 print("Pathogenicity prediction")
 
-df_out$CADD_PHRED = as.numeric(vep$CADD_PHRED)
-df_out$CADD_RAW = as.numeric(vep$CADD_RAW)
+df_out$CADD_PHRED = as.numeric(vep$MitImpact_CADD_phred_score)
+df_out$CADD_RAW = as.numeric(vep$MitImpact_CADD_score)
 df_out$MutScore = as.numeric(vep$Mut_Score)
 df_out$REVELScore = as.numeric(vep$REVEL_Score)
+df_out$tRNA_APOGEE_Score = as.numeric(vep$`tRNA_APOGEE_t-APOGEE_unbiased_score`)
 
 patho_norm_func = function(predictions){
   predictions = gsub(";", ",", predictions)
@@ -290,9 +320,10 @@ patho_norm_func = function(predictions){
   unlist(lapply(predictions, function(x) {
     y = strsplit(x,",")[[1]]
     y = y[!y %in% c("-", ".", "U", "")]
-    y[y %in% c("tolerated", "tolerated_low_confidence", "benign", "n", "l", "p", "t")] = "T"
-    y[y %in% c("deleterious", "deleterious_low_confidence", "probably_damaging", 
-               "possibly_damaging", "a", "m", "h", "d", "Dominant", "Recessive")] = "D"
+    y[y %in% c("tolerated", "tolerated_low_confidence", "benign", "n", "l", "p", "t","neutral","likely-benign",
+              "likely_benign")] = "T"
+    y[y %in% c("deleterious", "deleterious_low_confidence", "probably_damaging","disease", 
+               "possibly_damaging", "a", "m", "h", "d", "Dominant", "Recessive","pathogenic")] = "D"
     if ("D" %in% y) { return("D") }
     else if ("T" %in% y) { return("T") }
     else {return("")}
@@ -300,8 +331,8 @@ patho_norm_func = function(predictions){
 }  
 
 df_pathogenic_predictors = data.frame(row.names = 1:nrow(vep))
-df_pathogenic_predictors$SIFT = patho_norm_func(vep$SIFT)
-df_pathogenic_predictors$PolyPhen = patho_norm_func(vep$PolyPhen)
+#df_pathogenic_predictors$SIFT = patho_norm_func(vep$SIFT)
+#df_pathogenic_predictors$PolyPhen = patho_norm_func(vep$PolyPhen)
 df_pathogenic_predictors$Polyphen2_HDIV_pred = patho_norm_func(vep$Polyphen2_HDIV_pred)
 df_pathogenic_predictors$Polyphen2_HVAR_pred = patho_norm_func(vep$Polyphen2_HVAR_pred)
 df_pathogenic_predictors$LRT_pred = patho_norm_func(vep$LRT_pred)
@@ -311,7 +342,7 @@ df_pathogenic_predictors$MetaSVM_pred = patho_norm_func(vep$MetaSVM_pred)
 df_pathogenic_predictors$MutationAssessor_pred = patho_norm_func(vep$MutationAssessor_pred)
 df_pathogenic_predictors$MutationTaster_pred = patho_norm_func(vep$MutationTaster_pred)
 df_pathogenic_predictors$PROVEAN_pred = patho_norm_func(vep$PROVEAN_pred)
-df_pathogenic_predictors$FATHMM_pred = patho_norm_func(vep$FATHMM_pred)
+#df_pathogenic_predictors$FATHMM_pred = patho_norm_func(vep$FATHMM_pred)
 df_pathogenic_predictors$MetaRNN_pred = patho_norm_func(vep$MetaRNN_pred)
 df_pathogenic_predictors$PrimateAI_pred = patho_norm_func(vep$PrimateAI_pred)
 df_pathogenic_predictors$DEOGEN2_pred = patho_norm_func(vep$DEOGEN2_pred)
@@ -322,7 +353,27 @@ df_pathogenic_predictors$`LIST-S2_pred` = patho_norm_func(vep$`LIST-S2_pred`)
 df_pathogenic_predictors$Aloft_pred = patho_norm_func(vep$Aloft_pred)
 df_pathogenic_predictors$`fathmm-MKL_coding_pred` = patho_norm_func(vep$`fathmm-MKL_coding_pred`)
 df_pathogenic_predictors$`fathmm-XF_coding_pred` = patho_norm_func(vep$`fathmm-XF_coding_pred`)
-  
+df_pathogenic_predictors$`fathmm-XF_coding_pred` = patho_norm_func(vep$`fathmm-XF_coding_pred`)
+
+# los predictores sacadois de MitImpact
+df_pathogenic_predictors$PolyPhen = patho_norm_func(vep$MitImpact_PolyPhen2)
+df_pathogenic_predictors$SIFT = patho_norm_func(vep$MitImpact_SIFT)
+df_pathogenic_predictors$SIFT4G = patho_norm_func(vep$MitImpact_SIFT4G)
+df_pathogenic_predictors$VEST = patho_norm_func(vep$MitImpact_VEST)
+df_pathogenic_predictors$MITOCLASS = patho_norm_func(vep$MitImpact_Mitoclass1)
+df_pathogenic_predictors$SNPDryad = patho_norm_func(vep$MitImpact_SNPDryad)
+df_pathogenic_predictors$FATHMM = patho_norm_func(vep$MitImpact_FATHMM)
+df_pathogenic_predictors$AlphaMissense = patho_norm_func(vep$MitImpact_AlphaMissense)
+df_pathogenic_predictors$PROVEAN = patho_norm_func(vep$MitImpact_PROVEAN)
+df_pathogenic_predictors$EFIN_SP = patho_norm_func(vep$MitImpact_EFIN_SP)
+df_pathogenic_predictors$EFIN_HD = patho_norm_func(vep$MitImpact_EFIN_HD)
+df_pathogenic_predictors$MLC = patho_norm_func(vep$MitImpact_MLC)
+df_pathogenic_predictors$APOGEE1 = patho_norm_func(vep$MitImpact_APOGEE1)
+df_pathogenic_predictors$APOGEE2 = patho_norm_func(vep$MitImpact_APOGEE2)
+df_pathogenic_predictors$CAROL = patho_norm_func(vep$MitImpact_CAROL)
+df_pathogenic_predictors$Condel = patho_norm_func(vep$MitImpact_Condel)
+df_pathogenic_predictors$PANTHER = patho_norm_func(vep$MitImpact_PANTHER)
+
 
 df_out$N_Pathogenic_pred = apply(df_pathogenic_predictors, 1, function(x) table(x)["D"])
 df_out$N_Pathogenic_pred[is.na(df_out$N_Pathogenic_pred)] = 0
@@ -342,7 +393,7 @@ print("Conservation and phylogeny")
 df_out$LoFtool = as.numeric(vep$LoFtool)
 #antiguo "ExACpLI ahora es pLI_gene_value
 df_out$ExACpLI = as.numeric(vep$pLI_gene_value)
-df_out$gnomAD_exomes_CCR = vep$gnomAD_exomes_CCR
+#df_out$gnomAD_exomes_CCR = vep$gnomAD_exomes_CCR
 df_out$phastCons30way_mammalian = as.numeric(vep$phastCons470way_mammalian)
 df_out$phyloP30way_mammalian = as.numeric(vep$phyloP470way_mammalian)
 df_out$MGI_mouse_phenotype = vep$MGI_mouse_phenotype_filt
