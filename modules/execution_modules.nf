@@ -4790,8 +4790,14 @@ process VEP_CHRM {
 		path mitomap_genomeloci_tbi
 		path mitotip
 		path mitotip_tbi
-		path gnomad_chrM
-		path gnomad_chrM_tbi
+		path gnomad_chrM_reduced
+		path gnomad_chrM_reduced_tbi
+		path gnomad_chrM_full
+		path gnomad_chrM_full_tbi
+		path mitimpact
+		path mitimpact_tbi
+		path t_apogee
+		path t_apogee_tbi
 	
 	
 	output:
@@ -4824,8 +4830,16 @@ phyloP470way_mammalian,phastCons470way_mammalian,GERP++_RS,Interpro_domain,GTEx_
 		def chrM_disease_config    = chrM_disease ?  "--custom ${chrM_disease},Mitomap_disease,vcf,exact,0,aachange,Disease,DiseaseStatus,HGFL " : ''
 		def chrM_mitomapgenomeloci_config = mitomap_genomeloci ? "--custom ${mitomap_genomeloci},Mitomap_genomeloci,bed " : ''
 		def chrM_mitotip_config    = mitotip ?  "--custom ${mitotip},MitoTip,vcf,exact,0,MitoTIP_Score,MitoTIP_Quartile,MitoTIP_Count,MitoTIP_Percentage,MitoTIP_Status " : ''
-		def chrM_gnomad_config    = gnomad_chrM ?  "--custom ${gnomad_chrM},gnomAD,vcf,exact,0,AC_hom,AC_het,AF_hom,AF_het,AN,max_observed_heteroplasmy,FILTER " : ''
+		def chrM_gnomad_reduced_config    = gnomad_chrM_reduced ?  "--custom ${gnomad_chrM_reduced},gnomAD,vcf,exact,0,AC_hom,AC_het,AF_hom,AF_het,AN,max_observed_heteroplasmy,FILTER " : ''
+		def chrM_gnomad_full_config    = gnomad_chrM_full ?  "--custom ${gnomad_chrM_full},gnomAD_full,vcf,exact,0,hap_defining_variant " : ''
 		def sample_info_config    = vcf_w_sample_info    ? "--custom ${vcf_w_sample_info},SAMPLE,vcf,exact,0,AD_REF,AD_ALT,AF,DP,filter " : ''
+		def mitimpact_config    = mitimpact    ? "--custom ${mitimpact},MitImpact,vcf,exact,0,\
+Functional_effect_general,Functional_effect_detailed,PolyPhen2,SIFT,SIFT4G,VEST_pvalue,VEST,VEST_FDR,Mitoclass1,SNPDryad,FATHMM,\
+AlphaMissense,CADD_score,CADD_phred_score,CADD,PROVEAN,MutationAssessor,EFIN_SP,EFIN_HD,MLC,PANTHER,CAROL,Condel,\
+APOGEE1_score,APOGEE1,APOGEE2_score,APOGEE2,PhastCons_100V,PhyloP_100V,PhyloP_470Way,PhastCons_470Way,\
+HelixMTdb_AC_hom,HelixMTdb_AF_hom,HelixMTdb_AC_het,HelixMTdb_AF_het,HelixMTdb_mean_ARF,HelixMTdb_max_ARF,ToMMo_54KJPN_AC,ToMMo_54KJPN_AF,ToMMo_54KJPN_AN " : ''
+		def t_apogee_config    = t_apogee ?  "--custom ${t_apogee},tRNA_APOGEE,vcf,exact,0,t-APOGEE_unbiased_score " : ''
+
 
 		"""
 		vep \\
@@ -4859,7 +4873,10 @@ phyloP470way_mammalian,phastCons470way_mammalian,GERP++_RS,Interpro_domain,GTEx_
 		${chrM_mitomapgenomeloci_config} \\
 		${chrM_disease_config} \\
 		${chrM_mitotip_config} \\
-		${chrM_gnomad_config} \\
+		${chrM_gnomad_full_config} \\
+		${chrM_gnomad_reduced_config} \\
+		${mitimpact_config} \\
+		${t_apogee_config} \\
 		${sample_info_config}
 
 		"""
