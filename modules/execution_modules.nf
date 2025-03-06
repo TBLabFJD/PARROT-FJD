@@ -4065,7 +4065,7 @@ process PRINTREADS_CHRM {
 
 	script:
 		"""
-		gatk PrintReads \
+		gatk --java-options "-Xmx${params.mediummem}g" PrintReads \
 			-R ${ref_fasta} \
 			-L chrM \
 			--read-filter MateOnSameContigOrNoMappedMateReadFilter \
@@ -4090,7 +4090,7 @@ process REVERTSAM {
 
 	script:
 		"""
-		gatk RevertSam \
+		gatk --java-options "-Xmx${params.mediummem}g" RevertSam \
 			INPUT=${bam} \
 			OUTPUT=${sample}.chrM.unmapped.bam \
 			OUTPUT_BY_READGROUP=false \
@@ -4117,7 +4117,7 @@ process SAMTOFASTQ {
 
 	script:
 		"""
-		gatk SamToFastq \
+		gatk --java-options "-Xmx${params.mediummem}g" SamToFastq \
 			INPUT=${bam} \
 			FASTQ=${sample}_R1.chrM.fastq \
 			SECOND_END_FASTQ=${sample}_R2.chrM.fastq \
@@ -4181,7 +4181,7 @@ process MERGEBAMALIGNMENT_CHRM {
 
 		${scratch_mkdir}
 
-		gatk MergeBamAlignment ${scratch_field} \
+		gatk --java-options "-Xmx${params.mediummem}g" MergeBamAlignment ${scratch_field} \
 			--VALIDATION_STRINGENCY SILENT \
 			--EXPECTED_ORIENTATIONS FR \
 			--ATTRIBUTES_TO_RETAIN X0 \
@@ -4463,7 +4463,7 @@ process FILTER_MUTECT_CALLS_INITIAL {
 			--max-alt-allele-count 4 \\
 			--min-allele-fraction 0 \\
 
-		gatk VariantFiltration  \\
+		gatk --java-options "-Xmx${params.mediummem}g" VariantFiltration  \\
 			-V 	${sample}.mutect_filtered.vcf \\
 			-O  ${sample}.filtered.vcf \\
 			--apply-allele-specific-filters \\
@@ -4490,7 +4490,7 @@ process SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES {
 	script:
 
 		"""
-		gatk LeftAlignAndTrimVariants  \\
+		gatk --java-options "-Xmx${params.mediummem}g" LeftAlignAndTrimVariants  \\
 			-V ${vcf} \\
 			-R ${ref_fasta} \\
 			-O ${sample}.filtered.split.vcf \\
@@ -4498,7 +4498,7 @@ process SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES {
 			--dont-trim-alleles \\
 			--keep-original-ac 
 
-		gatk SelectVariants \
+		gatk --java-options "-Xmx${params.mediummem}g" SelectVariants \
 			-V ${sample}.filtered.split.vcf \\
 			-O ${sample}.filtered.splitAndPassOnly.vcf \\
 			--exclude-filtered
@@ -4617,7 +4617,7 @@ process FILTER_MUTECT_CALLS_CONTAMINATION {
 			--min-allele-fraction 0 \\
 			--contamination-estimate \$hc_contamination
 
-		gatk VariantFiltration  \\
+		gatk --java-options "-Xmx${params.mediummem}g" VariantFiltration  \\
 			-V 	${sample}.mutect_filtered.vcf \\
 			-O  ${sample}.contamination_filtered.vcf \\
 			--apply-allele-specific-filters \\
@@ -4645,7 +4645,7 @@ process SPLITMULTIALLELICSSITES_CHR {
 	script:
 
 		"""
-		gatk LeftAlignAndTrimVariants  \\
+		gatk --java-options "-Xmx${params.mediummem}g" LeftAlignAndTrimVariants  \\
 			-V ${vcf} \\
 			-R ${ref_fasta} \\
 			-O ${sample}.chrM.final.vcf \\
@@ -4833,7 +4833,7 @@ phyloP470way_mammalian,phastCons470way_mammalian,GERP++_RS,Interpro_domain,GTEx_
 		def chrM_gnomad_reduced_config    = gnomad_chrM_reduced ?  "--custom ${gnomad_chrM_reduced},gnomAD,vcf,exact,0,AC_hom,AC_het,AF_hom,AF_het,AN,max_observed_heteroplasmy,FILTER " : ''
 		def chrM_gnomad_full_config    = gnomad_chrM_full ?  "--custom ${gnomad_chrM_full},gnomAD_full,vcf,exact,0,hap_defining_variant " : ''
 		def sample_info_config    = vcf_w_sample_info    ? "--custom ${vcf_w_sample_info},SAMPLE,vcf,exact,0,AD_REF,AD_ALT,AF,DP,filter " : ''
-		def mitimpact_config    = mitimpact    ? "--custom ${mitimpact},MitImpact,vcf,exact,0,\
+		def mitimpact_config    = mitimpact    ? "--custom ${mitimpact},MitImpact,vcf,exact,0,HGVS,\
 Functional_effect_general,Functional_effect_detailed,PolyPhen2,SIFT,SIFT4G,VEST_pvalue,VEST,VEST_FDR,Mitoclass1,SNPDryad,FATHMM,\
 AlphaMissense,CADD_score,CADD_phred_score,CADD,PROVEAN,MutationAssessor,EFIN_SP,EFIN_HD,MLC,PANTHER,CAROL,Condel,\
 APOGEE1_score,APOGEE1,APOGEE2_score,APOGEE2,PhastCons_100V,PhyloP_100V,PhyloP_470Way,PhastCons_470Way,\

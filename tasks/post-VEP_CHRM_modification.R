@@ -173,6 +173,19 @@ if (!is.null(glowgenes_path)){
 df_out  = data.frame(row.names = 1:nrow(vep), stringsAsFactors = F)
   
 
+# Function to extract REF and ALT without underscores
+extract_alleles <- function(variant) {
+  # Extract the portion with REF/ALT using regex
+  matches <- regmatches(variant, regexec("_[A-Za-z-]+/[A-Za-z-]+$", variant))
+  if (length(matches[[1]]) > 0) {
+    # Remove the leading underscore and split by "/"
+    ref_alt <- unlist(strsplit(sub("_", "", matches[[1]]), "/"))
+    return(ref_alt)
+  }
+  return(c(NA, NA)) # Return NA if no match
+}
+
+alt_ref_alleles <- t(sapply(vep$`#Uploaded_variation`, extract_alleles))
 
 
 
@@ -183,8 +196,12 @@ print("Basic information of the variant")
 
 df_out$CHROM = unlist(lapply(vep$Location, function(x) strsplit(x, ":")[[1]][1]))
 df_out$POS = as.numeric(unlist(lapply(vep$`#Uploaded_variation`, function(x) rev(strsplit(x, "_")[[1]])[2])))
-df_out$REF = vep$USED_REF
-df_out$ALT = vep$Allele
+df_out$REF = alt_ref_alleles[, 1]
+df_out$ALT = alt_ref_alleles[, 2]
+# YBQ: en vez de coger el ref y el alt del USED_REF y el Allele que nos da VEP, parseamos el #Uploaded_variation, porque VEP no funciona bien en algunos genes del chrM.  
+#df_out$REF = vep$USED_REF
+#df_out$ALT = vep$Allele
+
 df_out$REF_COUNT = vep$SAMPLE_AD_REF
 df_out$ALT_COUNT = vep$SAMPLE_AD_ALT
 df_out$AF = vep$SAMPLE_AF
@@ -221,6 +238,7 @@ df_out$Functional_effect_detailed = vep$MitImpact_Functional_effect_detailed
 #df_out$EXON = vep$EXON
 df_out$HGVSc = vep$HGVSc
 df_out$HGVSp = vep$HGVSp
+df_out$HGVS = vep$MitImpact_HGVS 
 
 
 df_out$MitoMap_aachange = vep$Mitomap_disease_aachange
