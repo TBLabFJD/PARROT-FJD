@@ -4049,6 +4049,8 @@ process EXPANSIONHUNTER {
 
 process PRINTREADS_CHRM {
 	label "gatk"
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
+
 
 	input:
 		tuple val(sample), path(bam), path(bai)
@@ -4079,6 +4081,7 @@ process PRINTREADS_CHRM {
 
 process REVERTSAM {
 	label "gatk"
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(bam), path(bai)
@@ -4105,6 +4108,7 @@ process REVERTSAM {
 
 process SAMTOFASTQ {
 	label "gatk"
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(bam)
@@ -4159,6 +4163,7 @@ process BWA_CHRM {
 
 process MERGEBAMALIGNMENT_CHRM {
 	label "gatk"
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(mapped_bam), path(unmapped_bam)
@@ -4315,6 +4320,7 @@ process COLLECTWGSMETRICTS {
 process GATK4_MUTECT2 {
 
     label "gatk"
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
     input:
 	tuple val(sample), path(bam), path(bai)
@@ -4359,6 +4365,7 @@ process GATK4_MUTECT2 {
 
 process LIFTOVER_CHRM {
 	label "gatk"	
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(vcf)
@@ -4388,6 +4395,7 @@ process LIFTOVER_CHRM {
 
 process MERGE_VCFS_CHRM {
 	label "gatk"	
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 		tuple val(sample), path(vcf_chrmt), path(vcf_shiftedback)
@@ -4411,6 +4419,7 @@ process MERGE_VCFS_CHRM {
 
 process MERGE_MUTECT_STATS {
     label "gatk"
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
     input:
 	tuple val(sample), path(shifted_stats), path(non_shifted_stats)
@@ -4435,6 +4444,7 @@ process MERGE_MUTECT_STATS {
 
 process FILTER_MUTECT_CALLS_INITIAL {
     label "gatk"
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
     input:
 	tuple val(sample), path(vcf), path(vcf_index), path(stats)
@@ -4476,6 +4486,7 @@ process FILTER_MUTECT_CALLS_INITIAL {
 
 process SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES {
     label "gatk"
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
     input:
 	tuple val(sample), path(vcf), path(vcf_index)
@@ -4509,6 +4520,7 @@ process SPLITMULTIALLELICS_AND_REMOVENONPASS_SITES {
 
 process HAPLOCHECK {
 	container "https://depot.galaxyproject.org/singularity/haplocheck:1.3.3--h4a94de4_0"
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
 	input:
 	tuple val(sample), path(vcf), path(vcf_index)
@@ -4566,6 +4578,7 @@ process HAPLOCHECK {
 
 process FILTER_MUTECT_CALLS_CONTAMINATION {
     label "gatk"
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
     input:
 	tuple val(sample), path(vcf), path(vcf_index), path(stats), path (hasContamination), path (major_level), path (minor_level)
@@ -4630,7 +4643,7 @@ process FILTER_MUTECT_CALLS_CONTAMINATION {
 process SPLITMULTIALLELICSSITES_CHR {
     label "gatk"
 	publishDir "${params.output}/mitochondria/snvs", mode: 'copy'
-
+	errorStrategy { task.attempt <= 3 ? 'retry' : 'ignore' }
 
     input:
 	tuple val(sample), path(vcf), path(vcf_index)
@@ -4740,7 +4753,7 @@ process VEP_CHRM {
 	label "highcpu"
 	label "highmem"
 	// publishDir "${params.output}/snvs/", mode: 'copy'
-	publishDir "${params.output}/mitochondria/snvs", mode: 'copy'
+	//publishDir "${params.output}/mitochondria/snvs", mode: 'copy'
 
 	input:
 		path(dbscSNV)
