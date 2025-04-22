@@ -4898,7 +4898,7 @@ HelixMTdb_AC_hom,HelixMTdb_AF_hom,HelixMTdb_AC_het,HelixMTdb_AF_het,HelixMTdb_me
 
 
 process PVM_CHRM {
-	label "bioinfotools"
+	label "bioinfotools_MT"
 	label "highmem"
 	publishDir "${params.output}/mitochondria/snvs", mode: 'copy'
 	errorStrategy 'ignore'
