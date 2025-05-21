@@ -192,7 +192,9 @@ process BS_CHECK_GUR {
 
 			# List all the Output.Datasets (folders containing the reads per sample and per lane) and 
 			# filter to keep the ones containing the pattern *_L* to avoid duplicates.
-			${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name | grep "_L" | grep -v "Undetermined" > datasets.txt
+			# edit el 21/05/2025: cambia la manera de descargar y ya no hay que hacer grep _L y tal, si se quieren descargar algunos antiguos igual si hace falta 
+			${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name > datasets.txt
+			# ${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name | grep "_L" | grep -v "Undetermined" > datasets.txt
 			"""
 
 
@@ -235,7 +237,9 @@ process BS_CHECK_GUR {
 
 			# List all the Output.Datasets (folders containing the reads per sample and per lane) and 
 			# filter to keep the ones containing the pattern *_L* to avoid duplicates.
-			${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name | grep "_L" | grep -v "Undetermined" > datasets.txt
+			# edit el 21/05/2025: cambia la manera de descargar y ya no hay que hacer grep _L y tal, si se quieren descargar algunos antiguos igual si hace falta 
+			${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name > datasets.txt
+			# ${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name | grep "_L" | grep -v "Undetermined" > datasets.txt
 			"""
 		
 
@@ -267,7 +271,9 @@ process BS_CHECK_GUR {
 
 			# List all the Output.Datasets (folders containing the reads per sample and per lane) and 
 			# filter to keep the ones containing the pattern *_L* to avoid duplicates.
-			${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name | grep "_L" | grep -v "Undetermined" > datasets.txt
+			# edit el 21/05/2025: cambia la manera de descargar y ya no hay que hacer grep _L y tal, si se quieren descargar algunos antiguos igual si hace falta 
+			${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name > datasets.txt
+			# ${baseuser}bs appsession property get -i "\${appsession_id}" --property-name="Output.Datasets" -f csv -F Id -F Name | grep "_L" | grep -v "Undetermined" > datasets.txt
 			"""
 		
 }
