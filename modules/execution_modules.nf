@@ -2794,7 +2794,7 @@ process SPLIT_VEP_TSV {
 
 		"""
 		#max_size=\$((100 * 1024 * 1024)) # 100 MB in bytes
-		max_size=\$((80 * 1024 * 1024)) # 80 MB in bytes
+		max_size=\$((10 * 1024 * 1024)) # 80 MB in bytes
 		#max_size=\$((341047/2)) 
 		# Check the size of the VCF file
 		vcf_size=${final_vcf.size()}
