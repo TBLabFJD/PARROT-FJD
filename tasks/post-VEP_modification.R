@@ -176,9 +176,9 @@ print(nrow(vep))
 vep$gnomADe_AF_grpmax = as.numeric(unlist(lapply(vep$gnomADe_AF_grpmax, function(x) strsplit(x, ",")[[1]][1])))
 vep$gnomADg_AF_grpmax = as.numeric(unlist(lapply(vep$gnomADg_AF_grpmax, function(x) strsplit(x, ",")[[1]][1])))
 
-vep = vep[is.na(vep$gnomADe_AF_grpmax) | as.numeric(vep$gnomADe_AF_grpmax) < as.numeric(maf) | vep$gnomADe_filt != "PASS",]
+# vep = vep[is.na(vep$gnomADe_AF_grpmax) | as.numeric(vep$gnomADe_AF_grpmax) < as.numeric(maf) | vep$gnomADe_filt != "PASS",]
 print(nrow(vep))
-vep = vep[is.na(vep$gnomADg_AF_grpmax) | as.numeric(vep$gnomADg_AF_grpmax) < as.numeric(maf) | vep$gnomADg_filt != "PASS",]
+# vep = vep[is.na(vep$gnomADg_AF_grpmax) | as.numeric(vep$gnomADg_AF_grpmax) < as.numeric(maf) | vep$gnomADg_filt != "PASS",]
 print(nrow(vep))
 
 # Gene Filter
