@@ -137,7 +137,7 @@ nextflow run /home/gonzalo/nextflowtest/NextVariantFJD/main.nf \
 ## Versions
 
 GATK 4.4.0.0
-VEP release 105
+VEP release 112
 deepvariant v1.4.0
 annotsv 3.1.1
 manta 1.6.0
