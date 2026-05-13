@@ -2863,6 +2863,8 @@ process PVM {
 		val maf 
 		path genefilter 
 		path glowgenes 
+		path interpro2disease
+		path slim2disease
 		val assembly
 		path projectDir
 
@@ -2900,6 +2902,8 @@ process PVM {
 		--expression ${tissue_expression} \\
 		--automap ./ \\
 		--maf ${maf} \\
+		--interprodisease ${interpro2disease} \\
+		--slimdisease ${slim2disease} \\
 		${omim_field}\\
 		${genefilter_field}\\
 		${glowgenes_field}\\

@@ -1037,6 +1037,8 @@ workflow ANNOTATION {
 			params.maf,
 			params.genelist,
 			params.glowgenes,
+			params.interpro2disease,
+			params.slim2disease,
 			params.assembly,
 			projectDir )
 

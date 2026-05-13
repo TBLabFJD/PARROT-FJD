@@ -6,7 +6,8 @@
 
 library(optparse)
 library(data.table)
-
+library(dplyr)
+library(stringr)
 
 
 
@@ -51,7 +52,13 @@ option_list = list(
               help="\t\tGLOWgenes output file to annotate and srt the results", metavar="character"),
   
   make_option(c("-p", "--panels"), type="character", default=NULL,
-              help="\t\tGene-Panel file to annotate", metavar="character")
+              help="\t\tGene-Panel file to annotate", metavar="character"),
+  
+  make_option(c("-t", "--interprodisease"), type="character", default=NULL, 
+              help="\t\tinterpro2disease file", metavar="character"),
+  
+  make_option(c("-l", "--slimdisease"), type="character", default=NULL, 
+              help="\t\tslim2disease file", metavar="character")
  )
 
 opt_parser = OptionParser(option_list=option_list)
@@ -70,7 +77,8 @@ automap_path = opt$automap
 maf = opt$maf
 genefilter_path = opt$genefilter
 glowgenes_path = opt$glowgenes
-panels_path = opt$panels
+interpro_disease_path = opt$interprodisease
+slims_disease_path = opt$slimdisease
 
 # 
 # input = "/home/gonzalo/tblab/mnt/genetica4/gonzalo/trio_externo_12oct/trio.annotated.1.tsv"
@@ -355,6 +363,100 @@ df_out$Interpro_domain = vep$Interpro_domain
 df_out$Interpro_domain = vep$Interpro_domain
 df_out$Domino_Score = vep$Domino_Score
 
+
+#=================================================#
+# Slims and Protein Domains associated to disease #
+#=================================================#
+
+print("Slims and Protein Domains associated to disease")
+
+#### 1) Set new columns: aa_pos and NP_id
+
+df_out <- df_out %>%
+  dplyr::mutate(
+    # Extract NP (before ":")
+    NP_id = stringr::str_extract(HGVSp, "^[^:]+"),
+    
+    # Remove version (e.g., NP_033655.5 -> NP_033655)
+    NP_id = stringr::str_remove(NP_id, "\\.\\d+$"),
+    
+    # Extract amino acid position
+    aa_pos = stringr::str_extract(HGVSp, "(?<=p\\.[A-Za-z]{3})\\d+"),
+    aa_pos = as.numeric(aa_pos)
+  )
+
+#### 2) Load and paste interpro2disease columns
+
+interpro = read.delim(interpro_disease_path, header = TRUE, stringsAsFactors = F, quote = "")
+interpro <- interpro %>%
+  tidyr::separate_rows(pathology, sep = ";")
+
+df_out <- df_out %>%
+  dplyr::left_join(
+    interpro,
+    by = c("NP_id" = "RefSeq.peptide.ID"),
+    relationship = "many-to-many"
+  ) %>%
+  dplyr::mutate(
+    match_flag = aa_pos >= Interpro.start & aa_pos <= Interpro.end,
+    
+    Interpro_Desc_ID_disease = ifelse(
+      match_flag,
+      paste(Interpro.Description, ID, pathology, sep = "__"),
+      NA_character_
+    ),
+    
+    disease2interpro = ifelse(
+      match_flag,
+      pathology,
+      NA_character_
+    )
+  ) %>%
+  dplyr::select(names(df_out), Interpro_Desc_ID_disease, disease2interpro) %>% 
+  distinct()
+
+#### 3) Load and paste slims2disease columns
+
+slims = read.delim(slims_disease_path, header = TRUE, stringsAsFactors = F, quote = "")
+slims <- slims %>%
+  tidyr::separate_rows(pathology, sep = ";")
+
+df_out <- df_out %>%
+  dplyr::mutate(
+    NP_id_full = stringr::str_extract(HGVSp, "^[^:]+")
+  ) %>%
+  dplyr::left_join(
+    slims,
+    by = c("NP_id_full" = "RefSeq_peptideID"),
+    relationship = "many-to-many"
+  ) %>%
+  dplyr::mutate(
+    match_flag = aa_pos >= Candidate_Instance_Start &
+      aa_pos <= Candidate_Instance_Stop,
+    
+    # ELM info → NA only for NO_FUNCTION_ASSIGNED
+    ELM_ID_Desc_Slim = dplyr::case_when(
+      match_flag & ELM_Identifier != "NO_FUNCTION_ASSIGNED" ~
+        paste(ELM_Identifier, ELM_Description, ELM_SLiM, sep = "///"),
+      TRUE ~ NA_character_
+    ),
+    
+    # Candidate info: ALWAYS for matches (even NO_FUNCTION_ASSIGNED)
+    Candidate_Slim_Instance = dplyr::case_when(
+      match_flag ~
+        paste(Candidate_SLiM, Candidate_Instance, sep = "///"),
+      TRUE ~ NA_character_
+    ),
+    
+    # Pathology: ALWAYS for matches
+    disease2slim = dplyr::case_when(
+      match_flag ~ pathology,
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  dplyr::select(names(df_out), ELM_ID_Desc_Slim, Candidate_Slim_Instance, disease2slim) %>%
+  dplyr::select(-NP_id, -aa_pos) %>% 
+  distinct()
 
 #===============#
 # Pathogenicity #
