@@ -77,6 +77,7 @@ automap_path = opt$automap
 maf = opt$maf
 genefilter_path = opt$genefilter
 glowgenes_path = opt$glowgenes
+panels_path = opt$panels
 interpro_disease_path = opt$interprodisease
 slims_disease_path = opt$slimdisease
 
