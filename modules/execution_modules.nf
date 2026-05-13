@@ -2847,7 +2847,7 @@ process SPLIT_VEP_TSV {
 
 
 process PVM {
-	label "bioinfotools"
+	label "bioinfotools_MT"
 	label "highmem"
 	publishDir "${params.output}/snvs/", mode: 'copy'
 	errorStrategy 'ignore'
