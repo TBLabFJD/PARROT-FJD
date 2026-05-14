@@ -175,6 +175,117 @@ if (!is.null(glowgenes_path)){
   vep = merge(vep, glowgenes, by.x = "SYMBOL", by.y = "SYMBOL", all.x = T)
 }
 
+# protein domains associated to disease
+if (!is.null(interpro_disease_path)){
+  
+  #### 1) Set new columns: NP_id and aa_pos
+  vep <- vep %>%
+    mutate(
+      # Extract NP (before ":")
+      NP_id = stringr::str_extract(HGVSp, "^[^:]+"),
+      
+      # Remove version (e.g., NP_033655.5 -> NP_033655)
+      NP_id = stringr::str_remove(NP_id, "\\.\\d+$"),
+      
+      # Extract aminoacid position
+      aa_pos = stringr::str_extract(HGVSp, "(?<=p\\.[A-Za-z]{3})\\d+"),
+      aa_pos = as.numeric(aa_pos)
+    )
+  
+  #### 2) Load and paste interpro2disease columns
+  
+  interpro = read.delim(interpro_disease_path, header = TRUE, stringsAsFactors = F, quote = "")
+  interpro <- interpro %>% dplyr::rename(Gene_Name_interpro = Gene.name) # there is another column in vep dataframe called Gene.name
+  interpro <- interpro %>%
+    tidyr::separate_rows(pathology, sep = ";")
+  
+  vep <- vep %>%
+    dplyr::left_join(
+      interpro,
+      by = c("NP_id" = "RefSeq.peptide.ID"),
+      relationship = "many-to-many"
+    ) %>%
+    dplyr::mutate(
+      match_flag = aa_pos >= Interpro.start & aa_pos <= Interpro.end,
+      
+      Interpro.Desc_ID_disease = ifelse(
+        match_flag,
+        paste(Interpro.Description, ID, pathology, sep = "||"),
+        NA_character_
+      ),
+      
+      disease2interpro = ifelse(
+        match_flag,
+        pathology,
+        NA_character_
+      )
+    ) %>%
+    dplyr::select(names(vep), Interpro.Desc_ID_disease, disease2interpro) %>% 
+    dplyr::select(-NP_id, -aa_pos) %>% 
+    distinct() 
+}
+
+# SLIMs associated to disease
+if (!is.null(slims_disease_path)){
+  
+  #### 1) Set new columns: NP_id and aa_pos
+  vep <- vep %>%
+    mutate(
+      # Extract NP (before ":")
+      NP_id = stringr::str_extract(HGVSp, "^[^:]+"),
+      
+      # Remove version (e.g., NP_033655.5 -> NP_033655)
+      NP_id = stringr::str_remove(NP_id, "\\.\\d+$"),
+      
+      # Extract amino acid position
+      aa_pos = stringr::str_extract(HGVSp, "(?<=p\\.[A-Za-z]{3})\\d+"),
+      aa_pos = as.numeric(aa_pos)
+    )
+  
+  #### 2) Load and paste slims2disease columns
+  slims = read.delim(slims_disease_path, header = TRUE, stringsAsFactors = F, quote = "")
+  slims <- slims %>% dplyr::rename(Gene_Name_slims = Gene_Name) # maintain same with interpro filtering syntax
+  slims <- slims %>%
+    tidyr::separate_rows(pathology, sep = ";")
+  
+  vep <- vep %>%
+    dplyr::mutate(
+      NP_id_full = stringr::str_extract(HGVSp, "^[^:]+")
+    ) %>%
+    dplyr::left_join(
+      slims,
+      by = c("NP_id_full" = "RefSeq_peptideID"),
+      relationship = "many-to-many"
+    ) %>%
+    dplyr::mutate(
+      match_flag = aa_pos >= Candidate_Instance_Start &
+        aa_pos <= Candidate_Instance_Stop,
+      
+      # ELM info -> NA only for NO_FUNCTION_ASSIGNED
+      ELM.ID_Desc_Slim = dplyr::case_when(
+        match_flag & ELM_Identifier != "NO_FUNCTION_ASSIGNED" ~
+          paste(ELM_Identifier, ELM_Description, ELM_SLiM, sep = "||"),
+        TRUE ~ NA_character_
+      ),
+      
+      # Candidate info: ALWAYS for matches (even NO_FUNCTION_ASSIGNED)
+      Candidate.Slim_Instance = dplyr::case_when(
+        match_flag ~
+          paste(Candidate_SLiM, Candidate_Instance, sep = "||"),
+        TRUE ~ NA_character_
+      ),
+      
+      # Pathology: ALWAYS for matches
+      disease2slim = dplyr::case_when(
+        match_flag ~ pathology,
+        TRUE ~ NA_character_
+      )
+    ) %>%
+    dplyr::select(names(vep), ELM.ID_Desc_Slim, Candidate.Slim_Instance, disease2slim) %>%
+    dplyr::select(-NP_id, -aa_pos) %>% 
+    distinct()
+}
+
 
 # copy_vep = vep
 
@@ -331,15 +442,9 @@ for (sample in samples){
     warning=function(e) print(paste0("There is no AutoMap information of the sample ", sample))
   )
 }
-df_out$hiConfDeNovo = vep$SAMPLE_hiConfDeNovo
-df_out$loConfDeNovo = vep$SAMPLE_loConfDeNovo
-
-
 
 df_out$hiConfDeNovo = vep$SAMPLE_hiConfDeNovo
 df_out$loConfDeNovo = vep$SAMPLE_loConfDeNovo
-
-
 
 
 
@@ -362,103 +467,24 @@ df_out$HGVSp = vep$HGVSp
 df_out$DISTANCE = as.numeric(vep$DISTANCE)
 df_out$STRAND = vep$STRAND
 df_out$Interpro_domain = vep$Interpro_domain
-df_out$Interpro_domain = vep$Interpro_domain
 df_out$Domino_Score = vep$Domino_Score
 
 
 #=================================================#
 # Slims and Protein Domains associated to disease #
 #=================================================#
-
 print("Slims and Protein Domains associated to disease")
 
-#### 1) Set new columns: aa_pos and NP_id
+if (!is.null(interpro_disease_path)) {
+  df_out$Interpro.Desc_ID_disease <- vep$Interpro.Desc_ID_disease
+  df_out$disease2interpro <- vep$disease2interpro
+}
+if (!is.null(slims_disease_path)) {
+  df_out$ELM.ID_Desc_Slim <- vep$ELM.ID_Desc_Slim
+  df_out$Candidate.Slim_Instance <- vep$Candidate.Slim_Instance
+  df_out$disease2slim <- vep$disease2slim
+}
 
-df_out <- df_out %>%
-  dplyr::mutate(
-    # Extract NP (before ":")
-    NP_id = stringr::str_extract(HGVSp, "^[^:]+"),
-    
-    # Remove version (e.g., NP_033655.5 -> NP_033655)
-    NP_id = stringr::str_remove(NP_id, "\\.\\d+$"),
-    
-    # Extract amino acid position
-    aa_pos = stringr::str_extract(HGVSp, "(?<=p\\.[A-Za-z]{3})\\d+"),
-    aa_pos = as.numeric(aa_pos)
-  )
-
-#### 2) Load and paste interpro2disease columns
-
-interpro = read.delim(interpro_disease_path, header = TRUE, stringsAsFactors = F, quote = "")
-interpro <- interpro %>%
-  tidyr::separate_rows(pathology, sep = ";")
-
-df_out <- df_out %>%
-  dplyr::left_join(
-    interpro,
-    by = c("NP_id" = "RefSeq.peptide.ID"),
-    relationship = "many-to-many"
-  ) %>%
-  dplyr::mutate(
-    match_flag = aa_pos >= Interpro.start & aa_pos <= Interpro.end,
-    
-    Interpro_Desc_ID_disease = ifelse(
-      match_flag,
-      paste(Interpro.Description, ID, pathology, sep = "__"),
-      NA_character_
-    ),
-    
-    disease2interpro = ifelse(
-      match_flag,
-      pathology,
-      NA_character_
-    )
-  ) %>%
-  dplyr::select(names(df_out), Interpro_Desc_ID_disease, disease2interpro) %>% 
-  distinct()
-
-#### 3) Load and paste slims2disease columns
-
-slims = read.delim(slims_disease_path, header = TRUE, stringsAsFactors = F, quote = "")
-slims <- slims %>%
-  tidyr::separate_rows(pathology, sep = ";")
-
-df_out <- df_out %>%
-  dplyr::mutate(
-    NP_id_full = stringr::str_extract(HGVSp, "^[^:]+")
-  ) %>%
-  dplyr::left_join(
-    slims,
-    by = c("NP_id_full" = "RefSeq_peptideID"),
-    relationship = "many-to-many"
-  ) %>%
-  dplyr::mutate(
-    match_flag = aa_pos >= Candidate_Instance_Start &
-      aa_pos <= Candidate_Instance_Stop,
-    
-    # ELM info → NA only for NO_FUNCTION_ASSIGNED
-    ELM_ID_Desc_Slim = dplyr::case_when(
-      match_flag & ELM_Identifier != "NO_FUNCTION_ASSIGNED" ~
-        paste(ELM_Identifier, ELM_Description, ELM_SLiM, sep = "///"),
-      TRUE ~ NA_character_
-    ),
-    
-    # Candidate info: ALWAYS for matches (even NO_FUNCTION_ASSIGNED)
-    Candidate_Slim_Instance = dplyr::case_when(
-      match_flag ~
-        paste(Candidate_SLiM, Candidate_Instance, sep = "///"),
-      TRUE ~ NA_character_
-    ),
-    
-    # Pathology: ALWAYS for matches
-    disease2slim = dplyr::case_when(
-      match_flag ~ pathology,
-      TRUE ~ NA_character_
-    )
-  ) %>%
-  dplyr::select(names(df_out), ELM_ID_Desc_Slim, Candidate_Slim_Instance, disease2slim) %>%
-  dplyr::select(-NP_id, -aa_pos) %>% 
-  distinct()
 
 #===============#
 # Pathogenicity #
@@ -474,8 +500,6 @@ df_out$Orphanet_disorder = vep$Orphanet_disorder
 df_out$Orphanet_association_type = vep$Orphanet_association_type
 df_out$HPO_name = vep$HPO_name
 df_out$PUBMED = vep$PUBMED
-
-
 
 
 
@@ -523,8 +547,6 @@ df_out$FJD_MAF_AF_P_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AF_P_eyeg, functi
 df_out$FJD_MAF_AC_P_IRD = as.numeric(unlist(lapply(vep$FJD_MAF_AC_P_eyeg, function(x) strsplit(x, ",")[[1]][1])))
                                              
 df_out$denovoVariants_SAMPLE_CT = vep$denovoVariants_SAMPLE_CT
-
-
 
 
 
