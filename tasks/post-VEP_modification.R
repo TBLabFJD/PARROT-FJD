@@ -476,13 +476,13 @@ df_out$Domino_Score = vep$Domino_Score
 print("Slims and Protein Domains associated to disease")
 
 if (!is.null(interpro_disease_path)) {
-  df_out$Interpro.Desc_ID_disease <- vep$Interpro.Desc_ID_disease
-  df_out$disease2interpro <- vep$disease2interpro
+  df_out$Interpro.Desc_ID_disease <- as.character(vep$Interpro.Desc_ID_disease)
+  df_out$disease2interpro <- as.character(vep$disease2interpro)
 }
 if (!is.null(slims_disease_path)) {
-  df_out$ELM.ID_Desc_Slim <- vep$ELM.ID_Desc_Slim
-  df_out$Candidate.Slim_Instance <- vep$Candidate.Slim_Instance
-  df_out$disease2slim <- vep$disease2slim
+  df_out$ELM.ID_Desc_Slim <- as.character(vep$ELM.ID_Desc_Slim)
+  df_out$Candidate.Slim_Instance <- as.character(vep$Candidate.Slim_Instance)
+  df_out$disease2slim <- as.character(vep$disease2slim)
 }
 
 
