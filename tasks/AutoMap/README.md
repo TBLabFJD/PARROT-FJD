@@ -1,3 +1,6 @@
+## Update Version 1.3
+AutoMap v1.3 changed "grep -P" to "grep -E" and change error output to be run on singularity.
+
 ## Update Version 1.2
 AutoMap v1.2 accepts list of VCF files in a text file with the --vcflist option.
 
@@ -102,7 +105,7 @@ The output will be the same as individual output with an additional one containi
 A testing VCF with random variants can be found in the Test folder. The following command can be done to test AutoMap:
 ```
 AUTOMAP_HOME=<path/to/automap/script>
-bash $AUTOMAP_HOME/AutoMap_v1.0.sh
+bash $AUTOMAP_HOME/AutoMap_v1.2.sh
   --vcf $AUTOMAP_HOME/Test/TestSample.vcf
   --genome hg19
   --out $AUTOMAP_HOME/Results-test

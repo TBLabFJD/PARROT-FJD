@@ -2620,7 +2620,7 @@ process AUTOMAP {
 
 					bcftools view -s \${sample} -O v -o \${sample}.indv.vcf ${final_vcf}
 					
-					bash ./AutoMap/AutoMap_v1.2.sh \\
+					bash ./AutoMap/AutoMap_v1.3.sh \\
 					--vcf \${sample}.indv.vcf \\
 					--out . \\
 					--genome ${automap_assembly}
@@ -2633,7 +2633,7 @@ process AUTOMAP {
 					
 				bcftools view -O v -o ${final_vcf}.vcf ${final_vcf}
 
-				bash ./AutoMap/AutoMap_v1.2.sh \\
+				bash ./AutoMap/AutoMap_v1.3.sh \\
 				--vcf ${final_vcf}.vcf \\
 				--out . \\
 				--genome ${automap_assembly}
